@@ -1,6 +1,7 @@
 package com.codesignal.csbot;
 
 import com.codesignal.csbot.listeners.MessageListener;
+import com.codesignal.csbot.wss.CSWebSocket;
 import io.sentry.Sentry;
 import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDABuilder;
@@ -8,12 +9,11 @@ import net.dv8tion.jda.api.entities.Activity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.login.LoginException;
 
 public class CSBot {
     private static final Logger logger = LoggerFactory.getLogger(CSBot.class);
 
-    public static void main(String[] args) throws LoginException {
+    public static void main(String[] args) throws Exception {
         logger.info("Starting up Codesignal Bot");
 
         // Exception logging
@@ -26,5 +26,7 @@ public class CSBot {
                 .setActivity(Activity.playing("codesignal"))
                 .addEventListeners(new MessageListener())
                 .build();
+
+        new CSWebSocket().build();
     }
 }
