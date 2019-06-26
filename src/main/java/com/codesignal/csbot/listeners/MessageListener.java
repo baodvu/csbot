@@ -14,7 +14,10 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class MessageListener extends ListenerAdapter {
     private static final Logger logger = LoggerFactory.getLogger(MessageListener.class);
@@ -35,18 +38,27 @@ public class MessageListener extends ListenerAdapter {
                     event.getAuthor().getName(),
                     event.getMessage().getContentDisplay());
         } else {
+            String content = event.getMessage().getContentDisplay();
+
+            if (!event.getMessage().getAttachments().isEmpty()) {
+                content += "\n" + event.getMessage().getAttachments().stream().map(
+                        att -> "Attachment: " + att.getUrl()
+                ).collect(Collectors.joining("\n"));
+            }
+
             logger.info("[{}][{}] {}: {}",
                     event.getGuild().getName(),
                     event.getTextChannel().getName(),
-                    event.getMember().getEffectiveName(),
-                    event.getMessage().getContentDisplay());
+                    event.getMember() != null ? event.getMember().getEffectiveName() : "",
+                    content);
+
             storage.saveMessage(
                     new DiscordMessage(
                             event.getChannel().getIdLong(),
                             event.getMessageIdLong(),
                             com.datastax.driver.core.utils.UUIDs.timeBased(),
                             event.getAuthor().getIdLong(),
-                            event.getMessage().getContentRaw()
+                            content
                     )
             );
         }
@@ -56,28 +68,46 @@ public class MessageListener extends ListenerAdapter {
             TextChannel channel = event.getTextChannel();
             channel.sendMessage("Here are the edited messages within the last hour:").queue();
 
-            int count = 0;
+            int message_count = 0;
+            int character_count = 0;
+
+            List<String> buffer = new ArrayList<>();
 
             for (DiscordMessageVersioned message : storage.getEditedMessagesFromLastHour(event.getChannel().getIdLong())) {
                 User author = event.getJDA().getUserById(message.getAuthorId());
                 long unix_timestamp = UUIDs.unixTimestamp(message.getCreatedAt());
 
-                channel.sendMessage(
-                        String.format(
-                                "`%s` `[%d/%s]`: %s",
-                                author.getName(),
-                                message.getMessageId(),
-                                new Date(unix_timestamp).toString(),
-                                message.getContent()
-                        )
-                ).queue();
+                String s = String.format(
+                        "`%s` `[%d/%s]`: %s",
+                        author != null ? author.getName() : "",
+                        message.getMessageId(),
+                        new Date(unix_timestamp).toString(),
+                        message.getContent()
+                );
 
-                count++;
+                if (character_count + s.length() > 2000) {
+                    logger.info(String.join("\n", buffer));
+                    logger.info("{}", character_count + s.length() + 2 * buffer.size());
+                    channel.sendMessage(String.join("\n", buffer)).queue();
+                    buffer.clear();
+                    character_count = 0;
+                }
 
-                if (count >= 20) {
+                buffer.add(s);
+                character_count += s.length() + 2;
+                message_count++;
+
+                if (message_count >= 200) {
+                    channel.sendMessage(String.join("\n", buffer)).queue();
+                    buffer.clear();
                     channel.sendMessage("Too many messages bro").queue();
                     break;
                 }
+            }
+
+            if (!buffer.isEmpty()) {
+                channel.sendMessage(String.join("\n", buffer)).queue();
+                buffer.clear();
             }
         }
     }
@@ -87,11 +117,6 @@ public class MessageListener extends ListenerAdapter {
         if (event.getAuthor().isBot()) {
             return;
         }
-
-        logger.info("[update] message_id: {} | message: {} | channel: {}",
-                event.getMessageId(),
-                event.getMessage(),
-                event.getChannel());
 
         DiscordMessage message = storage.getMessage(
                 event.getChannel().getIdLong(),
@@ -111,13 +136,26 @@ public class MessageListener extends ListenerAdapter {
                 )
         );
 
+        String content = event.getMessage().getContentDisplay();
+
+        if (!event.getMessage().getAttachments().isEmpty()) {
+            content += "\n" + event.getMessage().getAttachments().stream().map(
+                    att -> "Attachment: " + att.getUrl()
+            ).collect(Collectors.joining("\n"));
+        }
+
+        logger.info("[update] message_id: {} | message: {} | channel: {}",
+                event.getMessageId(),
+                event.getMessage(),
+                event.getChannel());
+
         storage.saveVersionedMessage(
                 new DiscordMessageVersioned(
                         event.getChannel().getIdLong(),
                         event.getMessageIdLong(),
                         com.datastax.driver.core.utils.UUIDs.timeBased(),
                         event.getAuthor().getIdLong(),
-                        event.getMessage().getContentRaw()
+                        content
                 )
         );
     }
