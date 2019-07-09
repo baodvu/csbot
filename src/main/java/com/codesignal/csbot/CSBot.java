@@ -1,6 +1,7 @@
 package com.codesignal.csbot;
 
 import com.codesignal.csbot.listeners.MessageListener;
+import com.codesignal.csbot.watchers.MainWatcher;
 import com.codesignal.csbot.wss.CSWebSocket;
 import io.sentry.Sentry;
 import net.dv8tion.jda.api.AccountType;
@@ -18,6 +19,9 @@ public class CSBot {
 
         // Exception logging
         Sentry.init();
+
+        // Watchers to pull latest changes to a website / page
+        MainWatcher.init();
 
         String DISCORD_BOT_TOKEN = System.getenv("DISCORD_TOKEN");
 
