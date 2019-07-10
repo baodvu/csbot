@@ -13,10 +13,13 @@ import java.util.List;
 import java.util.Set;
 
 public class UndeleteCommandHandler implements CommandHandler {
-    private static Set<String> names = Set.of("undelete", "ud", "undel");
+    private static Set<String> names = Set.of("undelete", "ud", "undel", "tail");
     private Storage storage = new Storage();
 
     public Set<String> getNames() { return names; }
+    public String getShortDescription() { return "Shows deleted/edited messages"; }
+    public String getUsage() { return "Usage: undelete <options>\n" +
+            "    -n +NUM to output the last NUM lines"; }
 
     public void onMessageReceived(MessageReceivedEvent event) {
         TextChannel channel = event.getTextChannel();
