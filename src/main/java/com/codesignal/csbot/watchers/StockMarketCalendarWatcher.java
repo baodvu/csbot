@@ -10,7 +10,7 @@ class StockMarketCalendarWatcher {
     private static final Logger logger = LoggerFactory.getLogger(StockMarketCalendarWatcher.class);
 
     void run() throws UnirestException {
-        this.getTomorrowEvents();
+        getTomorrowEvents();
     }
 
     private void getTomorrowEvents() throws UnirestException {
@@ -50,7 +50,7 @@ class StockMarketCalendarWatcher {
                 .field("limit_from", "0")
                 .asJson().getBody().getObject().get("data").toString();
 
-        this.process(data);
+        process(data);
     }
 
     private void process(String data) throws UnirestException{

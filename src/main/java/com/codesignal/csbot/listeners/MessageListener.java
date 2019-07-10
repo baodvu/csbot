@@ -1,30 +1,66 @@
 package com.codesignal.csbot.listeners;
 
+import com.codesignal.csbot.listeners.handlers.CommandHandler;
+import com.codesignal.csbot.listeners.handlers.PingCommandHandler;
+import com.codesignal.csbot.listeners.handlers.UndeleteCommandHandler;
 import com.codesignal.csbot.models.DiscordMessage;
 import com.codesignal.csbot.models.DiscordMessageVersioned;
 import com.codesignal.csbot.storage.Storage;
-import com.datastax.driver.core.utils.UUIDs;
 import net.dv8tion.jda.api.entities.ChannelType;
-import net.dv8tion.jda.api.entities.TextChannel;
-import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import org.apache.lucene.search.spell.PlainTextDictionary;
+import org.apache.lucene.search.spell.SpellChecker;
+import org.apache.lucene.store.RAMDirectory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Date;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
 public class MessageListener extends ListenerAdapter {
+    private static final String COMMAND_PREFIX = ".";
+    private static final List<CommandHandler> COMMAND_HANDLERS = List.of(
+            new PingCommandHandler(),
+            new UndeleteCommandHandler()
+    );
     private static final Logger logger = LoggerFactory.getLogger(MessageListener.class);
-    private Storage storage;
+    private Storage storage = new Storage();
+    private SpellChecker spellChecker;
+    private Map<String, CommandHandler> commandHandlerMap = new HashMap<>();
 
     public MessageListener() {
-        this.storage = new Storage();
+        buildLuceneDictionary();
+    }
+
+    private void buildLuceneDictionary() {
+        StringBuilder sb = new StringBuilder();
+        for (CommandHandler handler: COMMAND_HANDLERS) {
+            for (String name: handler.getNames()) {
+                sb.append(name);
+                sb.append("\n");
+                commandHandlerMap.put(name, handler);
+            }
+        }
+        StringReader reader = new StringReader(sb.toString());
+
+        try {
+            PlainTextDictionary words = new PlainTextDictionary(reader);
+
+            // use in-memory lucene spell checker to make the suggestions
+            RAMDirectory dir = new RAMDirectory();
+            spellChecker = new SpellChecker(dir);
+            spellChecker.indexDictionary(words, 10, 10);
+        } catch (IOException e) {
+            logger.error("This can't be happening.");
+        }
     }
 
     @Override
@@ -63,51 +99,30 @@ public class MessageListener extends ListenerAdapter {
             );
         }
 
-        if (event.getMessage().getContentRaw().startsWith("git rekt")) {
-            logger.info("Looking for edited messages in the last hour");
-            TextChannel channel = event.getTextChannel();
-            channel.sendMessage("Here are the edited messages within the last hour:").queue();
+        String message = event.getMessage().getContentRaw();
+        if (message.startsWith(COMMAND_PREFIX)) {
+            StringTokenizer tokens = new StringTokenizer(message.substring(COMMAND_PREFIX.length()));
 
-            int message_count = 0;
-            int character_count = 0;
-
-            List<String> buffer = new ArrayList<>();
-
-            for (DiscordMessageVersioned message : storage.getEditedMessagesFromLastHour(event.getChannel().getIdLong())) {
-                User author = event.getJDA().getUserById(message.getAuthorId());
-                long unix_timestamp = UUIDs.unixTimestamp(message.getCreatedAt());
-
-                String s = String.format(
-                        "`%s` `[%d/%s]`: %s",
-                        author != null ? author.getName() : "",
-                        message.getMessageId(),
-                        new Date(unix_timestamp).toString(),
-                        message.getContent()
-                );
-
-                if (character_count + s.length() > 2000) {
-                    logger.info(String.join("\n", buffer));
-                    logger.info("{}", character_count + s.length() + 2 * buffer.size());
-                    channel.sendMessage(String.join("\n", buffer)).queue();
-                    buffer.clear();
-                    character_count = 0;
+            if (tokens.countTokens() > 0) {
+                String command = tokens.nextToken();
+                try {
+                    if (!commandHandlerMap.containsKey(command)) {
+                        String[] similarCommands = spellChecker.suggestSimilar(command, 1);
+                        if (similarCommands.length > 0) {
+                            command = similarCommands[0];
+                            event.getTextChannel().sendMessage(
+                                    String.format("*Did you mean to say `.%s`?*", command)
+                            ).queue();
+                        } else {
+                            command = null;
+                        }
+                    }
+                    if (command != null) {
+                        commandHandlerMap.get(command).onMessageReceived(event);
+                    }
+                } catch (IOException exception) {
+                    logger.error("IOException occurred in lucene spellchecker");
                 }
-
-                buffer.add(s);
-                character_count += s.length() + 2;
-                message_count++;
-
-                if (message_count >= 200) {
-                    channel.sendMessage(String.join("\n", buffer)).queue();
-                    buffer.clear();
-                    channel.sendMessage("Too many messages bro").queue();
-                    break;
-                }
-            }
-
-            if (!buffer.isEmpty()) {
-                channel.sendMessage(String.join("\n", buffer)).queue();
-                buffer.clear();
             }
         }
     }
