@@ -66,14 +66,17 @@ public class MessageListener extends ListenerAdapter {
     @Override
     public void onMessageReceived(MessageReceivedEvent event) {
         if (event.getAuthor().isBot()) {
+            // Ignores messages coming from bots.
             return;
         }
 
         if (event.isFromType(ChannelType.PRIVATE)) {
+            // Ignores private messages.
             logger.info("[PM] {}: {}",
                     event.getAuthor().getName(),
                     event.getMessage().getContentDisplay());
         } else {
+            // Saves message into the database.
             String content = event.getMessage().getContentDisplay();
 
             if (!event.getMessage().getAttachments().isEmpty()) {
@@ -99,6 +102,8 @@ public class MessageListener extends ListenerAdapter {
             );
         }
 
+        // If this is a command for the bot, indicated by COMMAND_PREFIX, then pass it over to the
+        // appropriate handler, using lucene approximate matching if needed.
         String message = event.getMessage().getContentRaw();
         if (message.startsWith(COMMAND_PREFIX)) {
             StringTokenizer tokens = new StringTokenizer(message.substring(COMMAND_PREFIX.length()));

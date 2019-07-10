@@ -7,6 +7,8 @@ import java.util.Set;
 public interface CommandHandler {
     /**
      * Name and aliases of the command.
+     * Note that the first string will be the name, and the rest is the aliases.
+     * The name should be self-descriptive, such that it can be used in a command list.
      */
     Set<String> getNames();
 
