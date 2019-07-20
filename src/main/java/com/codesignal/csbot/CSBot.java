@@ -5,6 +5,7 @@ import com.codesignal.csbot.watchers.MainWatcher;
 import com.codesignal.csbot.wss.CSWebSocket;
 import io.sentry.Sentry;
 import net.dv8tion.jda.api.AccountType;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.entities.Activity;
 import org.slf4j.Logger;
@@ -20,16 +21,16 @@ public class CSBot {
         // Exception logging
         Sentry.init();
 
-        // Watchers to pull latest changes to a website / page
-        MainWatcher.init();
-
+        // Init discord client
         String DISCORD_BOT_TOKEN = System.getenv("DISCORD_TOKEN");
-
-        new JDABuilder(AccountType.BOT)
+        JDA discordClient = new JDABuilder(AccountType.BOT)
                 .setToken(DISCORD_BOT_TOKEN)
                 .setActivity(Activity.playing("codesignal"))
                 .addEventListeners(new MessageListener())
-                .build();
+                .build().awaitReady();
+
+        // Watchers to pull latest changes to a website / page
+        MainWatcher.init(discordClient);
 
         new CSWebSocket().build();
     }

@@ -1,6 +1,7 @@
 package com.codesignal.csbot.watchers;
 
 import com.mashape.unirest.http.exceptions.UnirestException;
+import net.dv8tion.jda.api.JDA;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,8 +11,9 @@ import java.util.TimerTask;
 public class MainWatcher {
     private static final Logger logger = LoggerFactory.getLogger(MainWatcher.class);
 
-    public static void init() {
+    public static void init(JDA discordClient) {
         final int DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
+        final int MINUTE_IN_MILLISECONDS = 60 * 1000;
 
         new Timer().schedule(new TimerTask() {
             @Override
@@ -23,5 +25,12 @@ public class MainWatcher {
                 }
             }
         }, 0L, DAY_IN_MILLISECONDS);
+
+        new Timer().schedule(new TimerTask() {
+            @Override
+            public void run() {
+                new UTCWatcher().run(discordClient);
+            }
+        }, 0L, MINUTE_IN_MILLISECONDS);
     }
 }
