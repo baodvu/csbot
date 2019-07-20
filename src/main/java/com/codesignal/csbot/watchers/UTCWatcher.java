@@ -17,7 +17,7 @@ class UTCWatcher {
 
         String timeString = Instant.now()
                 .atOffset(ZoneOffset.UTC)
-                .format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+                .format(DateTimeFormatter.ofPattern("HH:mm"));
         channel.getManager().setName(timeString + " (UTC)").queue();
     }
 }

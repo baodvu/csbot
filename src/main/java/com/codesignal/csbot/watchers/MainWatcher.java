@@ -1,36 +1,25 @@
 package com.codesignal.csbot.watchers;
 
-import com.mashape.unirest.http.exceptions.UnirestException;
 import net.dv8tion.jda.api.JDA;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Timer;
-import java.util.TimerTask;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class MainWatcher {
     private static final Logger logger = LoggerFactory.getLogger(MainWatcher.class);
 
     public static void init(JDA discordClient) {
-        final int DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
-        final int MINUTE_IN_MILLISECONDS = 60 * 1000;
-
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                try {
-                    new StockMarketCalendarWatcher().run();
-                } catch (UnirestException exp) {
-                    logger.error("Failed to get data from investing.com");
-                }
-            }
-        }, 0L, DAY_IN_MILLISECONDS);
-
-        new Timer().schedule(new TimerTask() {
-            @Override
-            public void run() {
-                new UTCWatcher().run(discordClient);
-            }
-        }, 0L, MINUTE_IN_MILLISECONDS);
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        scheduler.scheduleAtFixedRate(
+                () -> new UTCWatcher().run(discordClient),
+                60 - ZonedDateTime.ofInstant(Instant.now(), ZoneId.systemDefault()).getSecond(),
+                TimeUnit.MINUTES.toSeconds(1),
+                TimeUnit.SECONDS);
     }
 }
