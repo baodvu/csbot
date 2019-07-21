@@ -20,7 +20,7 @@ import java.util.List;
 
 public class GetCSDailyHandler extends AbstractCommandHandler {
     private static final Logger log = LoggerFactory.getLogger(GetCSDailyHandler.class);
-    private static List<String> names = List.of("csdaily", "csd");
+    private static List<String> names = List.of("csdaily", "cs-daily", "csd");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Retrieve CodeSignal daily challenge information"; }
@@ -44,7 +44,7 @@ public class GetCSDailyHandler extends AbstractCommandHandler {
             eb.addField("Task ID", (String) challenge.get("_id"), true);
             eb.addField("Challenge ID", (String) challenge.get("challengeId"), true);
             eb.setColor(new Color(0xF4EB41));
-            event.getTextChannel().sendMessage(eb.build()).queue();
+            event.getChannel().sendMessage(eb.build()).queue();
         });
     }
 }

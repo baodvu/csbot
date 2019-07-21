@@ -61,7 +61,7 @@ public class GetTopSubHandler extends AbstractCommandHandler {
             "ts",
             "vb"
     );
-    private static List<String> names = List.of("cstop");
+    private static List<String> names = List.of("cstop", "cs-top", "cst");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Retrieve CodeSignal top solutions"; }
@@ -105,7 +105,7 @@ public class GetTopSubHandler extends AbstractCommandHandler {
                         ), false);
             });
             eb.setColor(new Color(0xF45964));
-            event.getTextChannel().sendMessage(eb.build()).queue();
+            event.getChannel().sendMessage(eb.build()).queue();
         });
     }
 

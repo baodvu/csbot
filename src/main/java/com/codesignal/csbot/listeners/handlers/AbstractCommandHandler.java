@@ -67,17 +67,17 @@ abstract class AbstractCommandHandler implements CommandHandler {
         try {
             Namespace ns = parser.parseArgs(tokens.toArray(String[]::new));
             if (ns.getBoolean("help") != null && ns.getBoolean("help")) {
-                event.getTextChannel().sendMessage(parser.formatHelp()).queue();
+                event.getChannel().sendMessage(parser.formatHelp()).queue();
                 throw new ArgumentParserException("user requested help", parser);
             }
             return ns;
         } catch (HelpArgumentException e) {
-            event.getTextChannel().sendMessage(
+            event.getChannel().sendMessage(
                     "```\n" + this.getParser().formatHelp() + "\n```"
             ).queue();
             throw e;
         } catch (ArgumentParserException e) {
-            event.getTextChannel().sendMessage(
+            event.getChannel().sendMessage(
                     "```error: " + e.getLocalizedMessage() + "\n" + this.getParser().formatUsage() + "```"
             ).queue();
             throw e;

@@ -17,6 +17,6 @@ public class PingCommandHandler extends AbstractCommandHandler {
 
     public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
         this.parseArgs(event);
-        event.getTextChannel().sendMessage("pong").queue();
+        event.getChannel().sendMessage("pong").queue();
     }
 }

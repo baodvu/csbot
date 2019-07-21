@@ -58,7 +58,7 @@ public class YoutubeDownloadHandler extends AbstractCommandHandler {
             log.info("Exit code: " + exitCode);
         } catch (IOException | InterruptedException exception) {
             log.error(exception.getMessage());
-            event.getTextChannel().sendMessage("Encountered an error: " + exception.getMessage()).queue();
+            event.getChannel().sendMessage("Encountered an error: " + exception.getMessage()).queue();
             FileSystemUtils.deleteRecursively(new File(tempFolder));
             return;
         }
@@ -67,19 +67,19 @@ public class YoutubeDownloadHandler extends AbstractCommandHandler {
             List<Path> result = walk.filter(Files::isRegularFile).collect(Collectors.toList());
 
             if (result.isEmpty()) {
-                event.getTextChannel().sendMessage("No videos smaller than 8MB found").queue();
+                event.getChannel().sendMessage("No videos smaller than 8MB found").queue();
                 FileSystemUtils.deleteRecursively(new File(tempFolder));
             } else {
-                result.forEach((Path path) -> event.getTextChannel()
+                result.forEach((Path path) -> event.getChannel()
                         .sendFile(new File(path.toString()), path.getFileName().toString()).queue(
                                 message ->
                                     // Delete folder after messasge sent.
                                     FileSystemUtils.deleteRecursively(new File(tempFolder))
                 ));
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
-            event.getTextChannel().sendMessage("Download failed: " + e.getMessage()).queue();
+            event.getChannel().sendMessage("Download failed: " + e.getMessage()).queue();
             FileSystemUtils.deleteRecursively(new File(tempFolder));
         }
     }
