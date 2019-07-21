@@ -4,11 +4,11 @@ package com.codesignal.csbot.adapters.codesignal.message;
 public class ResultMessage extends Message {
     private Object result;
 
-    ResultMessage() {
+    public ResultMessage() {
         this(null);
     }
 
-    ResultMessage(Object result) {
+    public ResultMessage(Object result) {
         super("result");
         this.result = result;
     }
