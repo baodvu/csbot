@@ -1,8 +1,10 @@
 package com.codesignal.csbot.listeners.handlers;
 
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
 
-import java.util.Set;
+import java.util.List;
+
 
 public interface CommandHandler {
     /**
@@ -10,7 +12,7 @@ public interface CommandHandler {
      * Note that the first string will be the name, and the rest is the aliases.
      * The name should be self-descriptive, such that it can be used in a command list.
      */
-    Set<String> getNames();
+    List<String> getNames();
 
     /**
      * A short description (less than 100 characters) of what the command does.
@@ -18,19 +20,9 @@ public interface CommandHandler {
     String getShortDescription();
 
     /**
-     * A short description of how the command can be used.
-     *
-     * Example:
-     *
-     * Usage: undelete <options>
-     *     -n +NUM to output the last NUM lines
-     */
-    String getUsage();
-
-    /**
      * This handler is called when a new message is received.
      *
      * @param event Discord message event, which you can use to read the message content and reply
      */
-    void onMessageReceived(MessageReceivedEvent event);
+    void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException;
 }

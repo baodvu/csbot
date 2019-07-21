@@ -1,10 +1,7 @@
 package com.codesignal.csbot.wss;
 
 import com.codesignal.csbot.CSBot;
-import com.codesignal.csbot.adapters.codesignal.message.Callback;
-import com.codesignal.csbot.adapters.codesignal.message.GetServerTimeMessage;
-import com.codesignal.csbot.adapters.codesignal.message.Message;
-import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
+import com.codesignal.csbot.adapters.codesignal.message.*;
 import com.codesignal.csbot.utils.Randomizer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -53,6 +50,9 @@ public class CSWebSocketImpl implements CSWebSocket {
                 } else if (message.contains("a[\"{\\\"msg\\\":\\\"connected\\\"")) {
                     isReady = true;
                     send(new GetServerTimeMessage());
+                    send(new LoginMessage(
+                            System.getenv("USER_EMAIL"),System.getenv("USER_DIGEST"),"sha-256"
+                    ));
                 } else if (message.contains("a[\"{\\\"msg\\\":\\\"result\\\"")) {
                     try {
                         ObjectMapper objectMapper = new ObjectMapper();

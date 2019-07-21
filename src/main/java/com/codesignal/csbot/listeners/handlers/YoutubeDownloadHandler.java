@@ -3,6 +3,9 @@ package com.codesignal.csbot.listeners.handlers;
 import com.codesignal.csbot.utils.Randomizer;
 import com.codesignal.csbot.utils.StreamGobbler;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
@@ -13,31 +16,29 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class YoutubeDownloadHandler implements CommandHandler {
+
+public class YoutubeDownloadHandler extends AbstractCommandHandler {
     private static final Logger log = LoggerFactory.getLogger(YoutubeDownloadHandler.class);
-    private static Set<String> names = Set.of("youtube-dl");
+    private static List<String> names = List.of("youtube-dl");
 
-    public Set<String> getNames() { return names; }
-    public String getShortDescription() { return "Download a video online"; }
-    public String getUsage() { return "Usage: youtube-dl <link>"; }
+    public List<String> getNames() { return names; }
+    public String getShortDescription() { return "Download an online video"; }
 
-    public void onMessageReceived(MessageReceivedEvent event) {
-        String receivedCommand = event.getMessage().getContentRaw();
-        StringTokenizer tokens = new StringTokenizer(receivedCommand);
+    public YoutubeDownloadHandler() {
+        ArgumentParser parser = this.buildArgParser();
+        parser.addArgument("link")
+                .help("Link to a page that contains a video you want to download");
+    }
 
-        if (tokens.countTokens() != 2) {
-            event.getTextChannel().sendMessage(getUsage()).queue();
-            return;
-        }
+    public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
+        Namespace ns = this.parseArgs(event);
 
-        tokens.nextToken();
-        String videoUrl = tokens.nextToken();
+        String videoUrl = ns.getString("link");
+
         if (videoUrl.startsWith("<")) {
             videoUrl = videoUrl.substring(1, videoUrl.length() - 1);
         }
@@ -71,10 +72,9 @@ public class YoutubeDownloadHandler implements CommandHandler {
             } else {
                 result.forEach((Path path) -> event.getTextChannel()
                         .sendFile(new File(path.toString()), path.getFileName().toString()).queue(
-                                message -> {
+                                message ->
                                     // Delete folder after messasge sent.
-                                    FileSystemUtils.deleteRecursively(new File(tempFolder));
-                                }
+                                    FileSystemUtils.deleteRecursively(new File(tempFolder))
                 ));
             }
         } catch (IOException e) {

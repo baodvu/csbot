@@ -9,6 +9,7 @@ import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import org.apache.lucene.search.spell.PlainTextDictionary;
 import org.apache.lucene.search.spell.SpellChecker;
 import org.apache.lucene.store.RAMDirectory;
@@ -27,6 +28,7 @@ public class MessageListener extends ListenerAdapter {
     private static final String COMMAND_PREFIX = ".";
     private static final List<CommandHandler> COMMAND_HANDLERS = List.of(
             new GetCSDailyHandler(),
+            new GetTopSubHandler(),
             new PingCommandHandler(),
             new UndeleteCommandHandler(),
             new YoutubeDownloadHandler()
@@ -123,7 +125,11 @@ public class MessageListener extends ListenerAdapter {
                         }
                     }
                     if (command != null) {
-                        commandHandlerMap.get(command).onMessageReceived(event);
+                        try {
+                            commandHandlerMap.get(command).onMessageReceived(event);
+                        } catch (ArgumentParserException exp) {
+                            // Since we already printed out the error to discord, do nothing here.
+                        }
                     }
                 } catch (IOException exception) {
                     logger.error("IOException occurred in lucene spellchecker");

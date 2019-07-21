@@ -6,13 +6,13 @@ public class MethodMessage extends Message {
     private String method;
     private List<Object> params;
 
-    MethodMessage(String method, List<Object> params) {
+    public MethodMessage(String method, List<Object> params) {
         super("method");
         this.method = method;
         this.params = params;
     }
 
-    MethodMessage(String method) {
+    public MethodMessage(String method) {
         super("method");
         this.method = method;
         this.params = List.of();
@@ -30,7 +30,7 @@ public class MethodMessage extends Message {
         return params;
     }
 
-    public void setParams(List<Object> params) {
+    protected void setParams(List<Object> params) {
         this.params = params;
     }
 }

@@ -6,22 +6,22 @@ import com.datastax.driver.core.utils.UUIDs;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.sourceforge.argparse4j.inf.ArgumentParserException;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
-public class UndeleteCommandHandler implements CommandHandler {
-    private static Set<String> names = Set.of("undelete", "ud", "undel", "tail");
+
+public class UndeleteCommandHandler extends AbstractCommandHandler {
+    private static List<String> names = List.of("undelete", "ud", "undel", "tail");
     private Storage storage = new Storage();
 
-    public Set<String> getNames() { return names; }
+    public List<String> getNames() { return names; }
     public String getShortDescription() { return "Shows deleted/edited messages"; }
-    public String getUsage() { return "Usage: undelete <options>\n" +
-            "    -n +NUM to output the last NUM lines"; }
 
-    public void onMessageReceived(MessageReceivedEvent event) {
+    public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
+        this.parseArgs(event);
         TextChannel channel = event.getTextChannel();
         channel.sendMessage("Here are the edited messages within the last hour:").queue();
 
