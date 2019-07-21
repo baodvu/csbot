@@ -25,6 +25,10 @@ public class GetCSDailyHandler extends AbstractCommandHandler {
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Retrieve CodeSignal daily challenge information"; }
 
+    public GetCSDailyHandler() {
+        this.buildArgParser();
+    }
+
     @SuppressWarnings("unchecked")
     public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
         this.parseArgs(event);

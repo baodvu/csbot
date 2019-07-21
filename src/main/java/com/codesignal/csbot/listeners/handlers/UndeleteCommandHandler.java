@@ -20,6 +20,10 @@ public class UndeleteCommandHandler extends AbstractCommandHandler {
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Shows deleted/edited messages"; }
 
+    public UndeleteCommandHandler() {
+        this.buildArgParser();
+    }
+
     public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
         this.parseArgs(event);
         TextChannel channel = event.getTextChannel();

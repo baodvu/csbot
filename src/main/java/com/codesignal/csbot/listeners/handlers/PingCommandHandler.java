@@ -11,6 +11,10 @@ public class PingCommandHandler extends AbstractCommandHandler {
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "A simple handler example"; }
 
+    public PingCommandHandler() {
+        this.buildArgParser();
+    }
+
     public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
         this.parseArgs(event);
         event.getTextChannel().sendMessage("pong").queue();
