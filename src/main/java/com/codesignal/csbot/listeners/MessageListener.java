@@ -1,9 +1,6 @@
 package com.codesignal.csbot.listeners;
 
-import com.codesignal.csbot.listeners.handlers.CommandHandler;
-import com.codesignal.csbot.listeners.handlers.GetCSDailyHandler;
-import com.codesignal.csbot.listeners.handlers.PingCommandHandler;
-import com.codesignal.csbot.listeners.handlers.UndeleteCommandHandler;
+import com.codesignal.csbot.listeners.handlers.*;
 import com.codesignal.csbot.models.DiscordMessage;
 import com.codesignal.csbot.models.DiscordMessageVersioned;
 import com.codesignal.csbot.storage.Storage;
@@ -31,7 +28,8 @@ public class MessageListener extends ListenerAdapter {
     private static final List<CommandHandler> COMMAND_HANDLERS = List.of(
             new GetCSDailyHandler(),
             new PingCommandHandler(),
-            new UndeleteCommandHandler()
+            new UndeleteCommandHandler(),
+            new YoutubeDownloadHandler()
     );
     private static final Logger logger = LoggerFactory.getLogger(MessageListener.class);
     private Storage storage = new Storage();

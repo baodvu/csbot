@@ -5,6 +5,7 @@ import com.codesignal.csbot.adapters.codesignal.message.Callback;
 import com.codesignal.csbot.adapters.codesignal.message.GetServerTimeMessage;
 import com.codesignal.csbot.adapters.codesignal.message.Message;
 import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
+import com.codesignal.csbot.utils.Randomizer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.neovisionaries.ws.client.WebSocket;
@@ -30,8 +31,9 @@ public class CSWebSocketImpl implements CSWebSocket {
 
     public CSWebSocketImpl build() throws Exception {
         WebSocketFactory factory = new WebSocketFactory();
+        String randomString = Randomizer.getAlphaNumericString(8);
 
-        ws = factory.createSocket("wss://app.codesignal.com/sockjs/0/" + getAlphaNumericString(8) + "/websocket",
+        ws = factory.createSocket("wss://app.codesignal.com/sockjs/0/" + randomString + "/websocket",
                 TIMEOUT_IN_MS);
         ws.addHeader("User-Agent",
                 "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) " +
@@ -102,19 +104,5 @@ public class CSWebSocketImpl implements CSWebSocket {
 
     public void send(Message message) {
         send(message, (ResultMessage result) -> {});
-    }
-
-    private static String getAlphaNumericString(int n)
-    {
-        String characterSet  = "0123456789abcdefghijklmnopqrstuvxyz";
-
-        StringBuilder sb = new StringBuilder(n);
-
-        for (int i = 0; i < n; i++) {
-            int index = (int) (characterSet.length() * Math.random());
-            sb.append(characterSet.charAt(index));
-        }
-
-        return sb.toString();
     }
 }
