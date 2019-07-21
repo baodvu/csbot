@@ -30,6 +30,7 @@ public class MessageListener extends ListenerAdapter {
             new GetCSDailyHandler(),
             new GetTopSubHandler(),
             new PingCommandHandler(),
+            new SayHandler(),
             new UndeleteCommandHandler(),
             new YoutubeDownloadHandler()
     );
