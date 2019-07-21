@@ -1,8 +1,8 @@
 package com.codesignal.csbot;
 
+import com.codesignal.csbot.adapters.codesignal.CodesignalClientSingleton;
 import com.codesignal.csbot.listeners.MessageListener;
 import com.codesignal.csbot.watchers.MainWatcher;
-import com.codesignal.csbot.wss.CSWebSocket;
 import io.sentry.Sentry;
 import net.dv8tion.jda.api.AccountType;
 import net.dv8tion.jda.api.JDA;
@@ -32,6 +32,6 @@ public class CSBot {
         // Watchers to pull latest changes to a website / page
         MainWatcher.init(discordClient);
 
-        new CSWebSocket().build();
+        CodesignalClientSingleton.getInstance();
     }
 }

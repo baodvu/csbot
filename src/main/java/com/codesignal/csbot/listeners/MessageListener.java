@@ -1,6 +1,7 @@
 package com.codesignal.csbot.listeners;
 
 import com.codesignal.csbot.listeners.handlers.CommandHandler;
+import com.codesignal.csbot.listeners.handlers.GetCSDailyHandler;
 import com.codesignal.csbot.listeners.handlers.PingCommandHandler;
 import com.codesignal.csbot.listeners.handlers.UndeleteCommandHandler;
 import com.codesignal.csbot.models.DiscordMessage;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 public class MessageListener extends ListenerAdapter {
     private static final String COMMAND_PREFIX = ".";
     private static final List<CommandHandler> COMMAND_HANDLERS = List.of(
+            new GetCSDailyHandler(),
             new PingCommandHandler(),
             new UndeleteCommandHandler()
     );
