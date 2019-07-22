@@ -148,10 +148,12 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                 }
                 sampleCount++;
             }
+
+            message.editMessage("✓ Hacking into the mainframe..." +
+                    "\n<a:load:508808716376866826> Checking for hidden tests...").queue();
             String baseMessage = "✓ Hacking into the mainframe..."
                     + String.format("\n✓ Found %s visible and %s hidden tests...", sampleCount, hiddenCount)
                     + "\n<a:load:508808716376866826> Extracting data from hidden test #" + testNumber + ":\n";
-            message.editMessage(baseMessage).queue();
 
             if (testNumber >= hiddenCount || testNumber < 0) {
                 event.getChannel().sendMessage("Test number is not valid.").queue();
@@ -189,6 +191,8 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
             for (int i = 0; i < CSWebSocketImpl.MAX_CONCURRENT; i++)
                 wss.add(new CSWebSocketImpl().build());
             int wssIndex = 0;
+            // On first send, we will trigger a nice animation.
+            boolean firstSend = true;
 
             StringBuilder recoveredInput = new StringBuilder();
             for (int batchIdx = 0; batchIdx < 20; batchIdx++) {
@@ -221,6 +225,10 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                                     bitsCountDown.countDown();
                                 }
                         );
+                        if (firstSend) {
+                            firstSend = false;
+                            message.editMessage(baseMessage).queue();
+                        }
                     }
 
                     new Thread(() -> {
