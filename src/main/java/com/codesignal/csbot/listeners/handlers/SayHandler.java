@@ -21,7 +21,7 @@ public class SayHandler extends AbstractCommandHandler{
                 .type(Long.class)
                 .help("Specify language to filter on")
                 .required(true);
-        parser.addArgument("text")
+        parser.addArgument("text").nargs("*")
                 .help("What you want the bot to say");
     }
 
@@ -33,11 +33,12 @@ public class SayHandler extends AbstractCommandHandler{
         Namespace ns = this.parseArgs(event);
 
         long channelId = ns.getLong("channel_id");
-        String text = ns.getString("text");
+        String text = String.join(" ", ns.getList("text"));
 
         TextChannel channel = event.getGuild().getTextChannelById(channelId);
         if (channel == null) return;
 
         channel.sendMessage(text).queue();
+        event.getMessage().delete().queue();
     }
 }
