@@ -15,7 +15,8 @@ class CodesignalClientImpl implements CodesignalClient {
     CodesignalClientImpl() {
         try {
             this.connection = new CSWebSocketImpl().build();
-        } catch (java.lang.Exception exception) {
+        } catch (Exception exception) {
+            exception.printStackTrace();
             log.error("Unable to establish connection to CodeSignal");
         }
     }

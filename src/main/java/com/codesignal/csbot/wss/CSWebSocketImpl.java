@@ -1,6 +1,5 @@
 package com.codesignal.csbot.wss;
 
-import com.codesignal.csbot.CSBot;
 import com.codesignal.csbot.adapters.codesignal.message.*;
 import com.codesignal.csbot.utils.Randomizer;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -15,11 +14,12 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class CSWebSocketImpl implements CSWebSocket {
-    private static final Logger log = LoggerFactory.getLogger(CSBot.class);
+    private static final Logger log = LoggerFactory.getLogger(CSWebSocketImpl.class);
     private final static AtomicInteger wssCount = new AtomicInteger(0);
     private static final List<String> CODESIGNAL_USERS = List.of(
             "sele_tester@tuta.io",
@@ -36,21 +36,67 @@ public class CSWebSocketImpl implements CSWebSocket {
 
     private final int TIMEOUT_IN_MS = 5000;
     private final ConcurrentHashMap<Long, Callback> callbacks = new ConcurrentHashMap<>();
-    private long messageId;
-    private volatile boolean isReady = false;
+    private volatile AtomicInteger messageId;
+    private volatile CountDownLatch isBooting;
+    private volatile long millisecondsSinceEpoch = System.currentTimeMillis();
 
     private WebSocket ws;
 
 
     public CSWebSocketImpl build() throws Exception {
+        resetConnection();
+        return this;
+    }
+
+    public void send(Message message, Callback callback) {
+        // Check if connection is healthy; millisecondsSinceEpoch is refreshed by server pings.
+        // If last ping was older than one minute than reset connection.
+        if (System.currentTimeMillis() - millisecondsSinceEpoch > 1000 * 60) {
+            try {
+                this.resetConnection();
+            } catch (Exception exception) {
+                exception.printStackTrace();
+                return;
+            }
+        }
+
+        try {
+            isBooting.await();
+        } catch (InterruptedException exception) {
+            log.error("Thread is interrupted. Return prematurely.");
+            return;
+        }
+
+        long snapshotMessageId = messageId.getAndIncrement();
+        message.setId(snapshotMessageId + "");
+        callbacks.put(snapshotMessageId, callback);
+        try {
+            ObjectMapper om = new ObjectMapper();
+            String toSent = om.writeValueAsString(List.of(om.writeValueAsString(message)));
+            log.info("[WS-sending] " + toSent);
+            ws.sendText(toSent);
+        } catch (JsonProcessingException exception) {
+            // pass
+        }
+    }
+
+    public void send(Message message) {
+        send(message, (ResultMessage result) -> {});
+    }
+
+    private void resetConnection() throws Exception {
+        messageId = new AtomicInteger(0);
+        isBooting = new CountDownLatch(1);
+        if (ws != null && ws.isOpen()) close();
+        log.info("Resetting connection to Codesignal");
+
         WebSocketFactory factory = new WebSocketFactory();
         String randomString = Randomizer.getAlphaNumericString(8);
 
-        ws = factory.createSocket("wss://app.codesignal.com/sockjs/0/" + randomString + "/websocket",
+        ws = factory.createSocket(
+                String.format("wss://app.codesignal.com/sockjs/0/%s/websocket", randomString),
                 TIMEOUT_IN_MS);
-        ws.addHeader("User-Agent",
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, like Gecko) " +
-                        "Chrome/75.0.3770.100 Safari/537.36");
+        ws.addHeader("User-Agent", Randomizer.getUserAgent());
 
         ws.addListener(new WebSocketAdapter() {
             @Override
@@ -62,15 +108,11 @@ public class CSWebSocketImpl implements CSWebSocket {
             public void onTextMessage(WebSocket websocket, String message) {
                 log.info("[WS-received] {}", message);
                 if (message.equals("a[\"{\\\"msg\\\":\\\"ping\\\"}\"]")) {
+                    millisecondsSinceEpoch = System.currentTimeMillis();
                     ws.sendText("[\"{\\\"msg\\\":\\\"pong\\\"}\"]");
                 } else if (message.contains("a[\"{\\\"msg\\\":\\\"connected\\\"")) {
-                    isReady = true;
-                    send(new GetServerTimeMessage());
-                    send(new LoginMessage(
-                            CODESIGNAL_USERS.get(wssCount.getAndIncrement() % CODESIGNAL_USERS.size()),
-                            DigestUtils.sha256Hex(System.getenv("USER_PASS")),
-                            "sha-256"
-                    ));
+                    millisecondsSinceEpoch = System.currentTimeMillis();
+                    isBooting.countDown();
                 } else if (message.contains("a[\"{\\\"msg\\\":\\\"result\\\"")) {
                     try {
                         ObjectMapper objectMapper = new ObjectMapper();
@@ -91,38 +133,14 @@ public class CSWebSocketImpl implements CSWebSocket {
         // Connect to the server and perform an opening handshake.
         // This method blocks until the opening handshake is finished.
         ws.connect();
-        ws.sendText(
-                "[\"{\\\"msg\\\":\\\"connect\\\",\\\"version\\\":\\\"1\\\"," +
-                        "\\\"support\\\":[\\\"1\\\",\\\"pre2\\\",\\\"pre1\\\"]}\"]");
-
-        messageId = 0;
-        return this;
-    }
-
-    public void send(Message message, Callback callback) {
-        while (!isReady) {
-            try {
-                Thread.sleep(1000);
-            }
-            catch(InterruptedException ex) {
-                Thread.currentThread().interrupt();
-            }
-        }
-        messageId++;
-        message.setId(messageId + "");
-        callbacks.put(messageId, callback);
-        try {
-            ObjectMapper om = new ObjectMapper();
-            String toSent = om.writeValueAsString(List.of(om.writeValueAsString(message)));
-            log.info("[WS-sending] " + toSent);
-            ws.sendText(toSent);
-        } catch (JsonProcessingException exception) {
-            // pass
-        }
-    }
-
-    public void send(Message message) {
-        send(message, (ResultMessage result) -> {});
+        ws.sendText("[\"{\\\"msg\\\":\\\"connect\\\",\\\"version\\\":\\\"1\\\"," +
+                "\\\"support\\\":[\\\"1\\\",\\\"pre2\\\",\\\"pre1\\\"]}\"]");
+        send(new GetServerTimeMessage());
+        send(new LoginMessage(
+                CODESIGNAL_USERS.get(wssCount.getAndIncrement() % CODESIGNAL_USERS.size()),
+                DigestUtils.sha256Hex(System.getenv("USER_PASS")),
+                "sha-256"
+        ));
     }
 
     public void close() {
