@@ -9,7 +9,8 @@ import com.codesignal.csbot.adapters.codesignal.message.task.GetSampleTestsMessa
 import com.codesignal.csbot.utils.Randomizer;
 import com.codesignal.csbot.wss.CSWebSocket;
 import com.codesignal.csbot.wss.CSWebSocketImpl;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -119,6 +120,8 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
             Map<Object, Object> inputToOutput = new LinkedHashMap<>();
             List<Map<Object, Object>> sampleTests = (List<Map<Object, Object>>) resultMessage.getResult();
             ObjectMapper objMapper = new ObjectMapper();
+            objMapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true);
+            objMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, false);
             for (Map<Object, Object> test : sampleTests) {
                 if (test.get("isHidden") != null && (boolean) test.get("isHidden")) {
                     hiddenCount++;
@@ -128,10 +131,6 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                     throw new RuntimeException("I/O is truncated. Current version doesn't support this.");
                 }
                 sampleCount++;
-                inputToOutput.put(
-                        test.get("input"),
-                        test.get("output")
-                );
             }
             String baseMessage = message.getContentRaw()
                     + String.format("\nFound %s visible and %s hidden tests...", sampleCount, hiddenCount)
@@ -144,21 +143,16 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
             }
 
             // 2. Construct code that will reverse engineer the hidden test cases.
-            String ioString;
-            try {
-                ioString = objMapper.writeValueAsString(objMapper.writeValueAsString(inputToOutput));
-            } catch (JsonProcessingException exp) {
-                log.error(exp.getMessage());
-                return;
-            }
             int base = sampleCount + 1;  // We can use any number between 0 and sampleCount correct tests
             int neededIteration = (int) Math.ceil(Math.log(128.0) / Math.log((double) base));
 
             List<String> code = new ArrayList<>();
-            code.add(String.format("visibleIORaw = %s", ioString));
-            code.add("visibleIO = json.loads(visibleIORaw, object_hook=asTreeOrList)");
-            code.add("filteredTestInput = sorted([testInput for testInput in testInputData if all" +
-                    "(testInput != eval(visibleInput) for visibleInput in visibleIO)], key=str)");
+            code.add(String.format("visibleIORaw = %s",
+                    objMapper.writeValueAsString(objMapper.writeValueAsString(sampleTests))));
+            code.add("visibleIO = [(item['input'], item['output']) for item in json.loads(visibleIORaw, " +
+                    "object_hook=asTreeOrList) if 'isHidden' not in item or not item['isHidden']]");
+            code.add("filteredTestInput = sorted([testInput for testInput in testInputData if all(testInput != " +
+                    "visibleInput for visibleInput, visibleOutput in visibleIO)], key=str)");
             code.add(String.format("alwaysIncorrectOutput = \"%s\"",
                     Randomizer.getAlphaNumericString(20)));
             code.add("currentTargetIndex = " + testNumber);
@@ -168,9 +162,9 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
             code.add(String.format(
                     "augmented_count = currentTargetOrd / %d**DIGIT_TO_CHECK %% %d",
                     base, base));
-            code.add("for key, val in list(visibleIO.items())[:int(augmented_count)]:");
-            code.add("    if eval(key) == eval(dir()[0]):");
-            code.add("        return val");
+            code.add("for inp, out in visibleIO[:int(augmented_count)]:");
+            code.add("    if inp == eval(dir()[0]):");
+            code.add("        return out");
             code.add("return alwaysIncorrectOutput");
             String compiled = String.join("\n", code);
 
@@ -186,6 +180,7 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                 for (int i = 0; i < neededIteration; i++) {
                     final int idx = i;
                     wss.get(i).send(
+
                             new SubmitTaskAnswerMessage(
                                     taskId,
                                     challengeId,
