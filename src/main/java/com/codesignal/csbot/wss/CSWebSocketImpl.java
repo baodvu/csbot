@@ -15,11 +15,12 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class CSWebSocketImpl implements CSWebSocket {
     private static final Logger log = LoggerFactory.getLogger(CSBot.class);
-    private static int wssCount = 0;
+    private final static AtomicInteger wssCount = new AtomicInteger(0);
     private static final List<String> CODESIGNAL_USERS = List.of(
             "sele_tester@tuta.io",
             "sele_tester1@tuta.io",
@@ -40,12 +41,8 @@ public class CSWebSocketImpl implements CSWebSocket {
 
     private WebSocket ws;
 
-    private static synchronized void incrementCount() {
-        wssCount++;
-    }
 
     public CSWebSocketImpl build() throws Exception {
-        incrementCount();
         WebSocketFactory factory = new WebSocketFactory();
         String randomString = Randomizer.getAlphaNumericString(8);
 
@@ -70,7 +67,7 @@ public class CSWebSocketImpl implements CSWebSocket {
                     isReady = true;
                     send(new GetServerTimeMessage());
                     send(new LoginMessage(
-                            CODESIGNAL_USERS.get(wssCount % CODESIGNAL_USERS.size()),
+                            CODESIGNAL_USERS.get(wssCount.incrementAndGet() % CODESIGNAL_USERS.size()),
                             DigestUtils.sha256Hex(System.getenv("USER_PASS")),
                             "sha-256"
                     ));
