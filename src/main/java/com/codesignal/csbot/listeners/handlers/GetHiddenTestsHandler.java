@@ -89,8 +89,13 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
 
                         String taskId = (String) challenge.get("taskId");
                         csClient.send(new GetSampleTestsMessage(taskId),
-                                sampleResult -> extractHiddenTestData(
-                                        sampleResult, event, taskId, challengeId, testNumber, delay)
+                                sampleResult -> {
+                                    Thread extractTestThread = new Thread(() ->
+                                        extractHiddenTestData(
+                                                sampleResult, event, taskId, challengeId, testNumber, delay)
+                                    );
+                                    extractTestThread.start();
+                                }
                         );
                     } else {
                         event.getChannel().sendMessage(
