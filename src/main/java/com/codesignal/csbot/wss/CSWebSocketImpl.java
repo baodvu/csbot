@@ -28,7 +28,10 @@ public class CSWebSocketImpl implements CSWebSocket {
             "cplusplusguy7@gmail.com",
             "grandgrant_92@yahoo.com",
             "LyndonB@gmail.com",
-            "fervorousCrab2@gmail.com"
+            "fervorousCrab2@gmail.com",
+            "themaxreversal35a@gmail.com",
+            "cicade12312fs@tuta.io"
+
     );
 
     private final int TIMEOUT_IN_MS = 5000;
