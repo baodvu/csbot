@@ -67,7 +67,7 @@ public class CSWebSocketImpl implements CSWebSocket {
                     isReady = true;
                     send(new GetServerTimeMessage());
                     send(new LoginMessage(
-                            CODESIGNAL_USERS.get(wssCount.incrementAndGet() % CODESIGNAL_USERS.size()),
+                            CODESIGNAL_USERS.get(wssCount.getAndIncrement() % CODESIGNAL_USERS.size()),
                             DigestUtils.sha256Hex(System.getenv("USER_PASS")),
                             "sha-256"
                     ));
