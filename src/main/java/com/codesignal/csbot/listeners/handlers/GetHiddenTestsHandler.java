@@ -53,8 +53,8 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                 .help("The index of the hidden test (default 0)");
         parser.addArgument("-d", "--delay")
                 .type(Integer.class)
-                .setDefault(6)
-                .help("A delay (in seconds) is needed as CodeSignal rate-limits (default 6)");
+                .setDefault(8)
+                .help("A delay (in seconds) is needed as CodeSignal rate-limits (default 8)");
     }
 
     @SuppressWarnings("unchecked")
