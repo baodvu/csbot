@@ -40,8 +40,12 @@ public class CSWebSocketImpl implements CSWebSocket {
 
     private WebSocket ws;
 
-    public CSWebSocketImpl build() throws Exception {
+    private static synchronized void incrementCount() {
         wssCount++;
+    }
+
+    public CSWebSocketImpl build() throws Exception {
+        incrementCount();
         WebSocketFactory factory = new WebSocketFactory();
         String randomString = Randomizer.getAlphaNumericString(8);
 
