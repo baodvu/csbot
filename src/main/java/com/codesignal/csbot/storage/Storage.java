@@ -2,6 +2,7 @@ package com.codesignal.csbot.storage;
 
 import com.codesignal.csbot.models.DiscordMessage;
 import com.codesignal.csbot.models.DiscordMessageVersioned;
+import com.codesignal.csbot.models.Notification;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.cassandra.core.CassandraOperations;
 import org.springframework.data.cassandra.core.CassandraTemplate;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -52,5 +54,16 @@ public class Storage {
                 .and(QueryBuilder.gte("created_at", last_hour));
 
         return cassandraOps.select(s, DiscordMessageVersioned.class);
+    }
+
+    public void saveNotification(String entityId) {
+        cassandraOps.insert(new Notification(entityId, Instant.now()));
+    }
+
+    public Notification lookupNotification(String entityId) {
+        Select s = QueryBuilder.select().from("notification");
+        s.where(QueryBuilder.eq("entity_id", entityId));
+
+        return cassandraOps.selectOne(s, Notification.class);
     }
 }

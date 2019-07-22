@@ -35,6 +35,7 @@ public class CSWebSocketImpl implements CSWebSocket {
     public static final int MAX_CONCURRENT = CODESIGNAL_USERS.size();
 
     private final int TIMEOUT_IN_MS = 5000;
+    private final int LINE_LIMIT = 100;
     private final ConcurrentHashMap<Long, Callback> callbacks = new ConcurrentHashMap<>();
     private volatile AtomicInteger messageId;
     private volatile CountDownLatch isBooting;
@@ -106,7 +107,7 @@ public class CSWebSocketImpl implements CSWebSocket {
 
             @Override
             public void onTextMessage(WebSocket websocket, String message) {
-                log.info("[WS-received] {}", message);
+                log.info("[WS-received] {}...", message.substring(0, Math.min(message.length(), LINE_LIMIT)));
                 if (message.equals("a[\"{\\\"msg\\\":\\\"ping\\\"}\"]")) {
                     millisecondsSinceEpoch = System.currentTimeMillis();
                     ws.sendText("[\"{\\\"msg\\\":\\\"pong\\\"}\"]");
