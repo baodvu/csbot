@@ -175,8 +175,9 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
 
             log.info("Needed number of iterations for 1 character = " + neededIteration);
 
-            for (int i = 0; i < neededIteration; i++)
+            for (int i = 0; i < CSWebSocketImpl.MAX_CONCURRENT; i++)
                 wss.add(new CSWebSocketImpl().build());
+            int wssIndex = 0;
 
             StringBuilder recoveredInput = new StringBuilder();
             for (int processed_character = 0; processed_character < 50; processed_character++) {
@@ -184,7 +185,7 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                 ConcurrentHashMap<Integer, Integer> bits = new ConcurrentHashMap<>();
                 for (int i = 0; i < neededIteration; i++) {
                     final int idx = i;
-                    wss.get(i).send(
+                    wss.get(wssIndex++ % wss.size()).send(
 
                             new SubmitTaskAnswerMessage(
                                     taskId,

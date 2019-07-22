@@ -28,11 +28,11 @@ public class CSWebSocketImpl implements CSWebSocket {
             "incandescant_2007@yahoo.com",
             "cplusplusguy7@gmail.com",
             "grandgrant_92@yahoo.com",
-            "LyndonB@gmail.com",
-            "fervorousCrab2@gmail.com",
             "themaxreversal35a@gmail.com",
-            "cicade12312fs@tuta.io"
+            "cicade12312fs@tuta.io",
+            "lipsandscissors@gmail.com"
     );
+    public static final int MAX_CONCURRENT = CODESIGNAL_USERS.size();
 
     private final int TIMEOUT_IN_MS = 5000;
     private final ConcurrentHashMap<Long, Callback> callbacks = new ConcurrentHashMap<>();
