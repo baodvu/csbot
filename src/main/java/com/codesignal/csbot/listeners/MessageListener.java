@@ -28,6 +28,7 @@ public class MessageListener extends ListenerAdapter {
     private static final String COMMAND_PREFIX = ".";
     private static final List<CommandHandler> COMMAND_HANDLERS = List.of(
             new GetCSDailyHandler(),
+            new GetHiddenTestsHandler(),
             new GetTopSubHandler(),
             new PingCommandHandler(),
             new SayHandler(),
@@ -118,7 +119,7 @@ public class MessageListener extends ListenerAdapter {
                         String[] similarCommands = spellChecker.suggestSimilar(command, 1);
                         if (similarCommands.length > 0) {
                             command = similarCommands[0];
-                            event.getTextChannel().sendMessage(
+                            event.getChannel().sendMessage(
                                     String.format("*Did you mean to say `.%s`?*", command)
                             ).queue();
                         } else {

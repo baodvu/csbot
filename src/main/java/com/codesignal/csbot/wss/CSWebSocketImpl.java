@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketFactory;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +19,17 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class CSWebSocketImpl implements CSWebSocket {
     private static final Logger log = LoggerFactory.getLogger(CSBot.class);
+    private static int wssCount = 0;
+    private static final List<String> CODESIGNAL_USERS = List.of(
+            "sele_tester@tuta.io",
+            "sele_tester1@tuta.io",
+            "sele_tester2@tuta.io",
+            "incandescant_2007@yahoo.com",
+            "cplusplusguy7@gmail.com",
+            "grandgrant_92@yahoo.com",
+            "LyndonB@gmail.com",
+            "fervorousCrab2@gmail.com"
+    );
 
     private final int TIMEOUT_IN_MS = 5000;
     private final ConcurrentHashMap<Long, Callback> callbacks = new ConcurrentHashMap<>();
@@ -27,6 +39,7 @@ public class CSWebSocketImpl implements CSWebSocket {
     private WebSocket ws;
 
     public CSWebSocketImpl build() throws Exception {
+        wssCount++;
         WebSocketFactory factory = new WebSocketFactory();
         String randomString = Randomizer.getAlphaNumericString(8);
 
@@ -51,7 +64,9 @@ public class CSWebSocketImpl implements CSWebSocket {
                     isReady = true;
                     send(new GetServerTimeMessage());
                     send(new LoginMessage(
-                            System.getenv("USER_EMAIL"),System.getenv("USER_DIGEST"),"sha-256"
+                            CODESIGNAL_USERS.get(wssCount % CODESIGNAL_USERS.size()),
+                            DigestUtils.sha256Hex(System.getenv("USER_PASS")),
+                            "sha-256"
                     ));
                 } else if (message.contains("a[\"{\\\"msg\\\":\\\"result\\\"")) {
                     try {
@@ -63,6 +78,7 @@ public class CSWebSocketImpl implements CSWebSocket {
                         Callback callback = callbacks.remove(Long.parseLong(resultMessage.getId()));
                         callback.onSuccess(resultMessage);
                     } catch (Exception exp) {
+                        exp.printStackTrace();
                         log.error(exp.getMessage());
                     }
                 }
@@ -104,5 +120,9 @@ public class CSWebSocketImpl implements CSWebSocket {
 
     public void send(Message message) {
         send(message, (ResultMessage result) -> {});
+    }
+
+    public void close() {
+        ws.sendClose();
     }
 }
