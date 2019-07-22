@@ -25,7 +25,7 @@ import java.util.StringTokenizer;
 import java.util.stream.Collectors;
 
 public class MessageListener extends ListenerAdapter {
-    private static final String COMMAND_PREFIX = ".";
+    private static final String COMMAND_PREFIX = System.getenv("COMMAND_PREFIX");
     private static final List<CommandHandler> COMMAND_HANDLERS = List.of(
             new GetCSDailyHandler(),
             new GetHiddenTestsHandler(),

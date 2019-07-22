@@ -156,8 +156,8 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
             code.add(String.format("alwaysIncorrectOutput = \"%s\"",
                     Randomizer.getAlphaNumericString(20)));
             code.add("currentTargetIndex = " + testNumber);
-            code.add("currentTargetInput = filteredTestInput[currentTargetIndex]");
-            code.add("currentTargetCharacter = str(currentTargetInput)[CHARACTER_TO_CHECK]");
+            code.add("currentTargetInput = json.dumps(filteredTestInput[currentTargetIndex], separators=(',', ':'))");
+            code.add("currentTargetCharacter = currentTargetInput[CHARACTER_TO_CHECK]");
             code.add("currentTargetOrd = ord(currentTargetCharacter)");
             code.add(String.format(
                     "augmented_count = currentTargetOrd / %d**DIGIT_TO_CHECK %% %d",
