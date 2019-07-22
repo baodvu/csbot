@@ -80,19 +80,22 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                     String challengeType = (String) challenge.get("type");
                     if (challengeType.equals("shortestSolution")) {
                         EmbedBuilder eb = new EmbedBuilder();
-                        eb.setTitle("Challenge", null);
+                        eb.setAuthor(String.format("%s", challenge.get("name")), null,
+                                "https://cdn.discordapp.com/emojis/580592986136641536.png");
                         eb.addField("Task ID", String.format("%s", challenge.get("taskId")), true);
                         eb.addField("Challenge ID", String.format("%s", challenge.get("_id")), true);
                         eb.addField("Name", String.format("%s", challenge.get("name")), true);
                         eb.setColor(new Color(0xF4EB41));
                         event.getChannel().sendMessage(eb.build()).queue();
+                        Message message =
+                                event.getChannel().sendMessage("<a:load:508808716376866826> Hacking into the mainframe...").complete();
 
                         String taskId = (String) challenge.get("taskId");
                         csClient.send(new GetSampleTestsMessage(taskId),
                                 sampleResult -> {
                                     Thread extractTestThread = new Thread(() ->
                                         extractHiddenTestData(
-                                                sampleResult, event, taskId, challengeId, testNumber, delay)
+                                                sampleResult, event, taskId, challengeId, testNumber, delay, message)
                                     );
                                     extractTestThread.start();
                                 }
@@ -112,11 +115,10 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
             String taskId,
             String challengeId,
             int testNumber,
-            int delay
+            int delay,
+            Message message
             )
     {
-        Message message =
-                event.getChannel().sendMessage("Hacking into the mainframe...").complete();
         ArrayList<CSWebSocket> wss = new ArrayList<>();
         try {
             // 1. Retrieve sample tests
@@ -137,9 +139,9 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                 }
                 sampleCount++;
             }
-            String baseMessage = message.getContentRaw()
-                    + String.format("\nFound %s visible and %s hidden tests...", sampleCount, hiddenCount)
-                    + "\nExtracting data from hidden test #" + testNumber + "...";
+            String baseMessage = "✓ Hacking into the mainframe..."
+                    + String.format("\n✓ Found %s visible and %s hidden tests...", sampleCount, hiddenCount)
+                    + "\n<a:load:508808716376866826> Extracting data from hidden test #" + testNumber + ":\n";
             message.editMessage(baseMessage).queue();
 
             if (testNumber >= hiddenCount || testNumber < 0) {
@@ -223,18 +225,19 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                     power *= base;
                 }
                 if (characterOrd == 0) {
-                    message.editMessage("Hacking complete. The input is " + recoveredInput).queue();
+                    message.editMessage(
+                            "✓ Hacking complete. The input is `" + recoveredInput + "`").queue();
                     log.info("hacking complete");
                     return;
                 }
                 char character = Character.toChars(characterOrd)[0];
                 recoveredInput.append(character);
-                message.editMessage(baseMessage + "\nRecovered input: " + recoveredInput + "...").queue();
+                message.editMessage(baseMessage + "`" + recoveredInput + "`").queue();
                 log.info("Recovered character: " + character);
                 Thread.sleep(delay);
             }
-            message.editMessage("We ran out of steam, sorry. The input is just too long. Here's what " +
-                    "we've recovered so far: " + recoveredInput).queue();
+            message.editMessage("The input is just too long. Here's what " +
+                    "we've uncovered so far: " + recoveredInput).queue();
             log.info("Too many chars! Input: " + recoveredInput);
         } catch (Exception exception) {
             exception.printStackTrace();
