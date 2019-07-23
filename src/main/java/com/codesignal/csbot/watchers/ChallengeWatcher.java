@@ -12,6 +12,7 @@ import com.codesignal.csbot.storage.Storage;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.TextChannel;
+import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,44 +115,69 @@ class ChallengeWatcher {
                                             .toArray(String[]::new);
                                     String[] parts = description.split(pattern);
 
-                                    EmbedBuilder eb = new EmbedBuilder();
-                                    eb.setAuthor(
-                                            author.get("username").toString(),
-                                            "https://app.codesignal.com/profile/" + author.get("username").toString(),
-                                            author.get("avatar") != null ? author.get("avatar").toString() : null);
-                                    eb.setTitle("Problem Statement");
-                                    eb.setDescription(parts[0].substring(0, Math.min(parts[0].length(), 2000)));
-                                    eb.setColor(new Color(0xF4CA3A));
-                                    channel.sendMessage(eb.build()).queue();
 
-                                    for (int i = 1; i < parts.length; i++) {
-                                        eb = new EmbedBuilder();
-                                        if (headers[i - 1].toLowerCase().contains("example")) {
+                                    for (int i = 0; i < parts.length; i++) {
+                                        EmbedBuilder eb = new EmbedBuilder();
+                                        if (i == 0) {
+                                            eb.setAuthor(
+                                                    author.get("username").toString(),
+                                                    "https://app.codesignal.com/profile/" + author.get("username").toString(),
+                                                    author.get("avatar") != null ? author.get("avatar").toString() : null);
+                                            eb.setTitle("Problem Statement");
+                                            eb.setDescription(parts[0].substring(0, Math.min(parts[0].length(), 2000)));
+                                        } else if (headers[i - 1].toLowerCase().contains("example")) {
                                             eb.setTitle("Example");
                                         } else if (headers[i - 1].toLowerCase().contains("input")) {
-                                            eb.setTitle("Input/Output");
+                                            eb.setTitle("I/O");
                                         }
 
                                         eb.setDescription(parts[i].substring(0, Math.min(parts[i].length(), 2000)));
-                                        eb.setColor(new Color(0xF4CA3A));
+                                        eb.setColor(color);
+
+                                        if (i == parts.length - 1) {
+                                            Map<Object, Object> io = (Map<Object, Object>) task.get("io");
+                                            List<Map<Object, Object>> input = (List<Map<Object, Object>>) io.get(
+                                                    "input");
+                                            Map<Object, Object> output = (Map<Object, Object>) io.get("output");
+
+                                            String inputBlock = input.stream().map(arg ->
+                                                    String.format("*%s* `%s`: %s",
+                                                            arg.get("type"),
+                                                            arg.get("name"),
+                                                            StringEscapeUtils.unescapeHtml4(
+                                                                    List.of(arg.get("description").toString().split(
+                                                                            "\n")).stream().filter(
+                                                                                    l -> l.strip().length() > 1
+                                                                    ).collect(Collectors.joining("\n"))
+                                                            ).replaceAll("</?code>", "```")
+                                                    )
+                                            ).collect(Collectors.joining("\n"));
+
+                                            eb.addField("Input", inputBlock, true);
+                                            eb.addField("Output", String.format("*%s*: %s",
+                                                    output.get("type"),
+                                                    StringEscapeUtils.unescapeHtml4(
+                                                            output.get("description").toString()
+                                                    ).replaceAll("</?code>", "```")
+                                            ), true);
+                                        }
+
                                         channel.sendMessage(eb.build()).queue();
                                     }
 
-                                    eb = new EmbedBuilder();
+                                    EmbedBuilder eb = new EmbedBuilder();
                                     eb.addField("Reward", String.format("%s", challenge.get("reward")), true);
                                     eb.addField("Duration", String.format("%s day(s)",
                                             (int) challenge.get("duration") / 1000 / 3600 / 24),
                                             true);
                                     eb.addField("Visibility", String.format("%s", challenge.get("visibility")),
                                             true);
-                                    eb.addField("Problem Type", String.format("%s", challenge.get("type")), true);
-                                    eb.addField("Ranking Type", String.format("%s", challenge.get("generalType")),
+                                    eb.addField("Problem Type", String.format("%s", challenge.get("generalType")),
+                                            true);
+                                    eb.addField("Ranking Type", String.format("%s", challenge.get("type")),
                                             true);
                                     eb.addField("Difficulty", String.format("%s", task.get("difficulty")), true);
                                     eb.addField("Task ID", String.format("%s", challenge.get("taskId")), true);
-                                    eb.addField("Challenge ID",
-                                            String.format("[%s](%s)", challengeId, challengeLink), true);
-                                    eb.addField("Author ID", String.format("%s", challenge.get("authorId")), true);
                                     eb.setFooter(
                                             "Have suggestions? Bug reports? Send them to @builder",
                                             "https://cdn.discordapp.com/emojis/493515691941560333.png");
