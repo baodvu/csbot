@@ -118,7 +118,7 @@ class ChallengeWatcher {
                                     eb.setAuthor(
                                             author.get("username").toString(),
                                             "https://app.codesignal.com/profile/" + author.get("username").toString(),
-                                            author.get("avatar").toString());
+                                            author.get("avatar") != null ? author.get("avatar").toString() : null);
                                     eb.setTitle("Problem Statement");
                                     eb.setDescription(parts[0].substring(0, Math.min(parts[0].length(), 2000)));
                                     eb.setColor(new Color(0xF4CA3A));

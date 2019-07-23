@@ -29,7 +29,7 @@ public class MainWatcher {
                 5,
                 TimeUnit.SECONDS);
 
-        ChallengeWatcher communityChallengeWatcher = new ChallengeWatcher("all", new Color(0xabfe1e));
+        ChallengeWatcher communityChallengeWatcher = new ChallengeWatcher("community", new Color(0xabfe1e));
         service.scheduleAtFixedRate(
                 () -> communityChallengeWatcher.run(discordClient),
                 0,
