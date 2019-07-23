@@ -32,7 +32,12 @@ public class CSWebSocketImpl implements CSWebSocket {
             "cicade12312fs@tuta.io",
             "lipsandscissors@gmail.com",
             "thehighersenate@tuta.io",
-            "highknees0cks@gmail.com"
+            "highknees0cks@gmail.com",
+            "wicked_potato3@hotmail.com",
+            "rowboat_dan@gmail.com",
+            "BoyardKing@gmail.com",
+            "JSSplinter@yahoo.com",
+            "hotboyonascooter99@gmail.com"
     );
     public static final int MAX_CONCURRENT = CODESIGNAL_USERS.size();
 
@@ -87,6 +92,24 @@ public class CSWebSocketImpl implements CSWebSocket {
         send(message, (ResultMessage result) -> {});
     }
 
+    private void sendWithoutChecking(Message message, Callback callback) {
+        long snapshotMessageId = messageId.getAndIncrement();
+        message.setId(snapshotMessageId + "");
+        callbacks.put(snapshotMessageId, callback);
+        try {
+            ObjectMapper om = new ObjectMapper();
+            String toSent = om.writeValueAsString(List.of(om.writeValueAsString(message)));
+            log.info("[WS-sending] " + toSent);
+            ws.sendText(toSent);
+        } catch (JsonProcessingException exception) {
+            // pass
+        }
+    }
+
+    private void sendWithoutChecking(Message message) {
+        sendWithoutChecking(message, (ResultMessage result) -> {});
+    }
+
     private void resetConnection() throws Exception {
         messageId = new AtomicInteger(0);
         isBooting = new CountDownLatch(1);
@@ -115,6 +138,12 @@ public class CSWebSocketImpl implements CSWebSocket {
                     ws.sendText("[\"{\\\"msg\\\":\\\"pong\\\"}\"]");
                 } else if (message.contains("a[\"{\\\"msg\\\":\\\"connected\\\"")) {
                     millisecondsSinceEpoch = System.currentTimeMillis();
+                    sendWithoutChecking(new GetServerTimeMessage());
+                    sendWithoutChecking(new LoginMessage(
+                            CODESIGNAL_USERS.get(wssCount.getAndIncrement() % CODESIGNAL_USERS.size()),
+                            DigestUtils.sha256Hex(System.getenv("USER_PASS")),
+                            "sha-256"
+                    ));
                     isBooting.countDown();
                 } else if (message.contains("a[\"{\\\"msg\\\":\\\"result\\\"")) {
                     try {
@@ -138,12 +167,6 @@ public class CSWebSocketImpl implements CSWebSocket {
         ws.connect();
         ws.sendText("[\"{\\\"msg\\\":\\\"connect\\\",\\\"version\\\":\\\"1\\\"," +
                 "\\\"support\\\":[\\\"1\\\",\\\"pre2\\\",\\\"pre1\\\"]}\"]");
-        send(new GetServerTimeMessage());
-        send(new LoginMessage(
-                CODESIGNAL_USERS.get(wssCount.getAndIncrement() % CODESIGNAL_USERS.size()),
-                DigestUtils.sha256Hex(System.getenv("USER_PASS")),
-                "sha-256"
-        ));
     }
 
     public void close() {
