@@ -34,7 +34,7 @@ public class GetCSDailyHandler extends AbstractCommandHandler {
         this.parseArgs(event);
         CodesignalClient csClient = CodesignalClientSingleton.getInstance();
 
-        Message message = new GetUserFeedMessage();
+        Message message = new GetUserFeedMessage("all");
         csClient.send(message, (ResultMessage resultMessage) -> {
             LinkedHashMap<Object, Object> result = (LinkedHashMap<Object, Object>) resultMessage.getResult();
             ArrayList<LinkedHashMap<Object, Object>> feed =
