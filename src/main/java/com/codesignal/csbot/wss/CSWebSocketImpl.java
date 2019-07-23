@@ -1,6 +1,8 @@
 package com.codesignal.csbot.wss;
 
 import com.codesignal.csbot.adapters.codesignal.message.*;
+import com.codesignal.csbot.models.CodesignalUser;
+import com.codesignal.csbot.storage.Storage;
 import com.codesignal.csbot.utils.Randomizer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,25 +23,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class CSWebSocketImpl implements CSWebSocket {
     private static final Logger log = LoggerFactory.getLogger(CSWebSocketImpl.class);
     private final static AtomicInteger wssCount = new AtomicInteger(0);
-    private static final List<String> CODESIGNAL_USERS = List.of(
-            "sele_tester@tuta.io",
-            "sele_tester1@tuta.io",
-            "sele_tester2@tuta.io",
-            "incandescant_2007@yahoo.com",
-            "cplusplusguy7@gmail.com",
-            "grandgrant_92@yahoo.com",
-            "themaxreversal35a@gmail.com",
-            "cicade12312fs@tuta.io",
-            "lipsandscissors@gmail.com",
-            "thehighersenate@tuta.io",
-            "highknees0cks@gmail.com",
-            "wicked_potato3@hotmail.com",
-            "rowboat_dan@gmail.com",
-            "BoyardKing@gmail.com",
-            "JSSplinter@yahoo.com",
-            "hotboyonascooter99@gmail.com"
-    );
-    public static final int MAX_CONCURRENT = CODESIGNAL_USERS.size();
+
+    private static List<CodesignalUser> CODESIGNAL_USERS;
+    public static int MAX_CONCURRENT;
+    static {
+        Storage storage = new Storage();
+        CODESIGNAL_USERS = storage.getAllUsers();
+        MAX_CONCURRENT = CODESIGNAL_USERS.size();
+    }
 
     private final int TIMEOUT_IN_MS = 5000;
     private final int LINE_LIMIT = 160;
@@ -139,9 +130,10 @@ public class CSWebSocketImpl implements CSWebSocket {
                 } else if (message.contains("a[\"{\\\"msg\\\":\\\"connected\\\"")) {
                     millisecondsSinceEpoch = System.currentTimeMillis();
                     sendWithoutChecking(new GetServerTimeMessage());
+                    CodesignalUser user = CODESIGNAL_USERS.get(wssCount.getAndIncrement() % CODESIGNAL_USERS.size());
                     sendWithoutChecking(new LoginMessage(
-                            CODESIGNAL_USERS.get(wssCount.getAndIncrement() % CODESIGNAL_USERS.size()),
-                            DigestUtils.sha256Hex(System.getenv("USER_PASS")),
+                            user.getEmail(),
+                            DigestUtils.sha256Hex(user.getPass()),
                             "sha-256"
                     ));
                     isBooting.countDown();

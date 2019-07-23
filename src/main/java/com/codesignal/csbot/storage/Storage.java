@@ -1,5 +1,6 @@
 package com.codesignal.csbot.storage;
 
+import com.codesignal.csbot.models.CodesignalUser;
 import com.codesignal.csbot.models.DiscordMessage;
 import com.codesignal.csbot.models.DiscordMessageVersioned;
 import com.codesignal.csbot.models.Notification;
@@ -65,5 +66,9 @@ public class Storage {
         s.where(QueryBuilder.eq("entity_id", entityId));
 
         return cassandraOps.selectOne(s, Notification.class);
+    }
+
+    public List<CodesignalUser> getAllUsers() {
+        return cassandraOps.select(QueryBuilder.select().from("codesignal_user"), CodesignalUser.class);
     }
 }
