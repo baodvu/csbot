@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 
-class OfficialChallengeWatcher {
-    private static final Logger log = LoggerFactory.getLogger(OfficialChallengeWatcher.class);
+class ChallengeWatcher {
+    private static final Logger log = LoggerFactory.getLogger(ChallengeWatcher.class);
 
     // Reduce calls to database by caching processed ids.
     private static Set<String> notifiedChallengeIds = new HashSet<>();
@@ -37,6 +37,14 @@ class OfficialChallengeWatcher {
     // If the challenge is too old we shouldn't dig it up.
     private final int MAX_LOOKBACK_TIME_IN_MS = 1000 * 60 * 60;  // 1 hour
 
+    // Setting
+    private String tab;
+    private Color color;
+
+    ChallengeWatcher(String tab, Color color) {
+        this.tab = tab;
+        this.color = color;
+    }
 
     @SuppressWarnings("unchecked")
     void run(JDA discordClient) {
@@ -47,7 +55,7 @@ class OfficialChallengeWatcher {
             return;
         }
 
-        Message message = new GetUserFeedMessage();
+        Message message = new GetUserFeedMessage(tab);
         csClient.send(message, (ResultMessage resultMessage) -> {
             Map<Object, Object> result = (Map<Object, Object>) resultMessage.getResult();
             List<Map<Object, Object>> feed =
@@ -147,7 +155,7 @@ class OfficialChallengeWatcher {
                                     eb.setFooter(
                                             "Have suggestions? Bug reports? Send them to @builder",
                                             "https://cdn.discordapp.com/emojis/493515691941560333.png");
-                                    eb.setColor(new Color(0xF4CA3A));
+                                    eb.setColor(color);
                                     eb.setTimestamp(Instant.now());
                                     channel.sendMessage(eb.build()).queue();
                                 }

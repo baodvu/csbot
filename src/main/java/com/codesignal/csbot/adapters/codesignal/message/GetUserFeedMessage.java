@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Map;
 
 public class GetUserFeedMessage extends MethodMessage {
-    public GetUserFeedMessage() {
+    public GetUserFeedMessage(String tab) {
         super("getUserFeed", List.of(Map.ofEntries(
                 Map.entry("type", "challenges"),
-                Map.entry("tab", "all"),
+                Map.entry("tab", tab),
                 Map.entry("difficulty", "all"),
                 Map.entry("generalType", "all"),
                 Map.entry("offset", 0),
