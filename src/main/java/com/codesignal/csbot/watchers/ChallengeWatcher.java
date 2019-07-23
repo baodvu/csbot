@@ -48,7 +48,7 @@ class ChallengeWatcher {
 
     @SuppressWarnings("unchecked")
     void run(JDA discordClient) {
-        long CHALLENGE_CHANNEL = 420829252842291210L;
+        long CHALLENGE_CHANNEL = 603056339710640155L;
         TextChannel channel = discordClient.getTextChannelById(CHALLENGE_CHANNEL);
         if (channel == null) {
             log.error("Channel #challenge can't be found.");

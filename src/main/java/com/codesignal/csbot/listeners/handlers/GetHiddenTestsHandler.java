@@ -195,7 +195,7 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
             boolean firstSend = true;
 
             StringBuilder recoveredInput = new StringBuilder();
-            for (int batchIdx = 0; batchIdx < 20; batchIdx++) {
+            for (int batchIdx = 0; batchIdx < 50; batchIdx++) {
                 AtomicInteger charCount = new AtomicInteger();
                 AtomicBoolean failed = new AtomicBoolean(false);
                 CountDownLatch batchCountDown = new CountDownLatch(batchSize);
