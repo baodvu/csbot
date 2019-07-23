@@ -52,15 +52,15 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
         parser.addArgument("-t", "--test-number")
                 .type(Integer.class)
                 .setDefault(0)
-                .help("The index of the hidden test (default 0)");
+                .help("The index of the hidden test");
         parser.addArgument("-b", "--batch-size")
                 .type(Integer.class)
                 .setDefault(5)
-                .help("Number of chars to recover in a batch (default 5)");
+                .help("Number of chars to recover in a batch");
         parser.addArgument("-d", "--delay")
                 .type(Integer.class)
                 .setDefault(0)
-                .help("A delay (in seconds) is needed as CodeSignal rate-limits (default 0)");
+                .help("A delay (in seconds) is needed as CodeSignal rate-limits");
     }
 
     @SuppressWarnings("unchecked")
