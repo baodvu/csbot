@@ -50,3 +50,8 @@ jar {
         )
     }
 }
+
+// This is required on windows to encode unicode characters in source files properly.
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
