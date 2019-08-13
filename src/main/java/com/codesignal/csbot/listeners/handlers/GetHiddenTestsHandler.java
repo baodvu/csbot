@@ -6,7 +6,6 @@ import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
 import com.codesignal.csbot.adapters.codesignal.message.SubmitTaskAnswerMessage;
 import com.codesignal.csbot.adapters.codesignal.message.challengeservice.GetDetailsMessage;
 import com.codesignal.csbot.adapters.codesignal.message.task.GetSampleTestsMessage;
-import com.codesignal.csbot.utils.Randomizer;
 import com.codesignal.csbot.wss.CSWebSocket;
 import com.codesignal.csbot.wss.CSWebSocketImpl;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -162,7 +161,7 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
 
             // 2. Construct code that will reverse engineer the hidden test cases.
             int base = sampleCount + 1;  // We can use any number between 0 and sampleCount correct tests
-            int neededIteration = (int) Math.ceil(Math.log(128.0) / Math.log((double) base));
+            int neededIteration = (int) Math.ceil(Math.log(128.0) / Math.log(base));
 
             List<String> code = new ArrayList<>();
             code.add(String.format("visibleIORaw = %s",
@@ -171,8 +170,7 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                     "object_hook=asTreeOrList) if 'isHidden' not in item or not item['isHidden']]");
             code.add("filteredTestInput = sorted([testInput for testInput in testInputData if all(testInput != " +
                     "visibleInput for visibleInput, visibleOutput in visibleIO)], key=str)");
-            code.add(String.format("alwaysIncorrectOutput = \"%s\"",
-                    Randomizer.getAlphaNumericString(20)));
+            code.add("alwaysIncorrectOutput = None");
             code.add("currentTargetIndex = " + testNumber);
             code.add("currentTargetInput = json.dumps(filteredTestInput[currentTargetIndex], separators=(',', ':'))");
             code.add("currentTargetCharacter = currentTargetInput[CHARACTER_TO_CHECK]");
