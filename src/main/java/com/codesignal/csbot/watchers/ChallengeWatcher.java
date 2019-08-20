@@ -41,15 +41,17 @@ class ChallengeWatcher {
     // Setting
     private String tab;
     private Color color;
+    private String notificationTag;
 
-    ChallengeWatcher(String tab, Color color) {
+    ChallengeWatcher(String tab, Color color, String notificationTag) {
         this.tab = tab;
         this.color = color;
+        this.notificationTag = notificationTag;
     }
 
     @SuppressWarnings("unchecked")
     void run(JDA discordClient) {
-        long CHALLENGE_CHANNEL = 603056339710640155L;
+        long CHALLENGE_CHANNEL = 388135065621757967L;
         TextChannel channel = discordClient.getTextChannelById(CHALLENGE_CHANNEL);
         if (channel == null) {
             log.error("Channel #challenge can't be found.");
@@ -96,8 +98,9 @@ class ChallengeWatcher {
                                     );
                                     channel.sendMessage(
                                             String.format(
-                                                    "**NEW CHALLENGE**: **%s**\n%s",
-                                                    challenge.get("name").toString(), challengeLink)).queue();
+                                                    "**NEW CHALLENGE**: **%s**\n%s\n%s",
+                                                    challenge.get("name").toString(), challengeLink, notificationTag))
+                                            .queue();
                                     String description =
                                             List.of(
                                                     task.get("description").toString()
@@ -123,7 +126,7 @@ class ChallengeWatcher {
                                                     author.get("username").toString(),
                                                     "https://app.codesignal.com/profile/" + author.get("username").toString(),
                                                     author.get("avatar") != null ? author.get("avatar").toString() : null);
-                                            eb.setTitle("Problem Statement");
+                                            eb.setTitle(challenge.get("name").toString());
                                             eb.setDescription(parts[0].substring(0, Math.min(parts[0].length(), 2000)));
                                         } else if (headers[i - 1].toLowerCase().contains("example")) {
                                             eb.setTitle("Example");

@@ -22,14 +22,16 @@ public class MainWatcher {
 
         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
 
-        ChallengeWatcher officialChallengeWatcher = new ChallengeWatcher("all", new Color(0xfebe1e));
+        ChallengeWatcher officialChallengeWatcher = new ChallengeWatcher(
+                "all", new Color(0xfebe1e), "<@&493536203447074826>");
         service.scheduleAtFixedRate(
                 () -> officialChallengeWatcher.run(discordClient),
                 0,
                 5,
                 TimeUnit.SECONDS);
 
-        ChallengeWatcher communityChallengeWatcher = new ChallengeWatcher("community", new Color(0xabfe1e));
+        ChallengeWatcher communityChallengeWatcher = new ChallengeWatcher(
+                "community", new Color(0xabfe1e), "<@&547589061909413926>");
         service.scheduleAtFixedRate(
                 () -> communityChallengeWatcher.run(discordClient),
                 0,
