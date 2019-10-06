@@ -7,7 +7,7 @@ import java.util.List;
 
 public class GetSampleTestsMessage extends MethodMessage {
     public GetSampleTestsMessage(String taskId) {
-        super("Task.getSampleTests", List.of(
+        super("taskSolveService.getSampleTests", List.of(
             taskId, "challenge"
         ));
     }

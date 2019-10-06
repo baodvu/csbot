@@ -6,7 +6,9 @@ import com.datastax.driver.core.utils.UUIDs;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
+import net.sourceforge.argparse4j.inf.Namespace;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,11 +23,18 @@ public class UndeleteCommandHandler extends AbstractCommandHandler {
     public String getShortDescription() { return "Shows deleted/edited messages"; }
 
     public UndeleteCommandHandler() {
-        this.buildArgParser();
+        ArgumentParser parser = this.buildArgParser();
+
+        parser.addArgument("-n", "--lines")
+                .type(Integer.class)
+                .setDefault(200)
+                .help("display the last n lines");
     }
 
     public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
-        this.parseArgs(event);
+        Namespace ns = this.parseArgs(event);
+        int lineCount = ns.getInt("lines");
+
         TextChannel channel = event.getTextChannel();
         channel.sendMessage("Here are the edited messages within the last hour:").queue();
 
@@ -56,10 +65,9 @@ public class UndeleteCommandHandler extends AbstractCommandHandler {
             character_count += s.length() + 2;
             message_count++;
 
-            if (message_count >= 200) {
+            if (message_count >= lineCount) {
                 channel.sendMessage(String.join("\n", buffer)).queue();
                 buffer.clear();
-                channel.sendMessage("Too many messages bro").queue();
                 break;
             }
         }

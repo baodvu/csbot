@@ -6,6 +6,7 @@ import com.codesignal.csbot.adapters.codesignal.message.Message;
 import com.codesignal.csbot.adapters.codesignal.message.MethodMessage;
 import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
 import com.codesignal.csbot.adapters.codesignal.message.challengeservice.GetDetailsMessage;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +21,6 @@ public class GetSubmissionMessage extends MethodMessage {
     private volatile String taskId;
     private final CountDownLatch countDownLatch;
 
-    @SuppressWarnings("unchecked")
     public GetSubmissionMessage(String challengeId, String lang) {
         super("taskLeaderboardService.getSubmissions");
         countDownLatch = new CountDownLatch(1);
@@ -29,11 +29,10 @@ public class GetSubmissionMessage extends MethodMessage {
 
         Message message = new GetDetailsMessage(challengeId);
         csClient.send(message, (ResultMessage resultMessage) -> {
-            LinkedHashMap<Object, Object> result = (LinkedHashMap<Object, Object>) resultMessage.getResult();
-            LinkedHashMap<Object, Object> task = (LinkedHashMap<Object, Object>) result.get("task");
+            JsonNode task = resultMessage.getResult().get("task");
 
             log.info("Found task " + task.get("_id"));
-            taskId = (String) task.get("_id");
+            taskId = task.get("_id").asText();
             countDownLatch.countDown();
         });
 

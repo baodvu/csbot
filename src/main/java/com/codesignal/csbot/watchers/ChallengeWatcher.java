@@ -9,6 +9,7 @@ import com.codesignal.csbot.adapters.codesignal.message.challengeservice.GetDeta
 import com.codesignal.csbot.adapters.codesignal.message.userservice.GetMultipleWithVisibleFieldsMessage;
 import com.codesignal.csbot.models.Notification;
 import com.codesignal.csbot.storage.Storage;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.TextChannel;
@@ -23,6 +24,7 @@ import java.util.*;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 
 class ChallengeWatcher {
@@ -49,45 +51,40 @@ class ChallengeWatcher {
         this.notificationTag = notificationTag;
     }
 
-    @SuppressWarnings("unchecked")
     void run(JDA discordClient) {
-        long CHALLENGE_CHANNEL = 388135065621757967L;
+        String ENV = System.getenv("ENV");
+        long CHALLENGE_CHANNEL = null != ENV && ENV.equals("prod") ? 388135065621757967L : 420829252842291210L;
         TextChannel channel = discordClient.getTextChannelById(CHALLENGE_CHANNEL);
         if (channel == null) {
             log.error("Channel #challenge can't be found.");
             return;
         }
 
-        Message message = new GetUserFeedMessage(tab);
+        Message message = new GetUserFeedMessage(tab, 0, 1);
         csClient.send(message, (ResultMessage resultMessage) -> {
-            Map<Object, Object> result = (Map<Object, Object>) resultMessage.getResult();
-            List<Map<Object, Object>> feed =
-                    (List<Map<Object, Object>>) result.get("feed");
-            Map<Object, Object> challenge = (Map<Object, Object>) feed.get(0).get("challenge");
+            JsonNode feed = resultMessage.getResult().get("feed");
+            JsonNode challenge = feed.get(0).get("challenge");
 
             // Check with db to see if this notification has already been sent out.
-            long elapsedSeconds = (Instant.now().toEpochMilli() - (Long) feed.get(0).get("date")) / 1000;
+            long elapsedSeconds = (Instant.now().toEpochMilli() - feed.get(0).get("date").asLong()) / 1000;
 
             // If more than an hour ago, skip
             if (elapsedSeconds > MAX_LOOKBACK_TIME_IN_MS) {
                 return;
             }
-            String challengeId = String.format("%s", challenge.get("_id"));
+            String challengeId = challenge.get("_id").textValue();
             if (notifiedChallengeIds.contains(challengeId)) {
                 return;
             }
             notifiedChallengeIds.add(challengeId);
 
-            csClient.send(new GetMultipleWithVisibleFieldsMessage(List.of(challenge.get("authorId").toString())),
+            csClient.send(new GetMultipleWithVisibleFieldsMessage(List.of(challenge.get("authorId").textValue())),
                     userResultMessage -> {
-                        List<Map<Object, Object>> users =
-                                (List<Map<Object, Object>>) userResultMessage.getResult();
-                        Map<Object, Object> author = users.get(0);
+                        JsonNode users = userResultMessage.getResult();
+                        JsonNode author = users.get(0);
                         csClient.send(new GetDetailsMessage(challengeId),
                                 detailsResultMessage -> {
-                                    Map<Object, Object> detailsResult =
-                                            (LinkedHashMap<Object, Object>) detailsResultMessage.getResult();
-                                    Map<Object, Object> task = (Map<Object, Object>) detailsResult.get("task");
+                                    JsonNode task = detailsResultMessage.getResult().get("task");
 
                                     Notification notification = storage.lookupNotification(challengeId);
                                     if (notification != null) return;
@@ -99,11 +96,11 @@ class ChallengeWatcher {
                                     channel.sendMessage(
                                             String.format(
                                                     "**NEW CHALLENGE**: **%s**\n%s\n%s",
-                                                    challenge.get("name").toString(), challengeLink, notificationTag))
+                                                    challenge.get("name").textValue(), challengeLink, notificationTag))
                                             .queue();
                                     String description =
                                             List.of(
-                                                    task.get("description").toString()
+                                                    task.get("description").textValue()
                                                             .replaceAll("<[^>]*>", "")
                                                             .split("\n"))
                                                     .stream().filter(line -> !"".equals(line))
@@ -123,10 +120,10 @@ class ChallengeWatcher {
                                         EmbedBuilder eb = new EmbedBuilder();
                                         if (i == 0) {
                                             eb.setAuthor(
-                                                    author.get("username").toString(),
-                                                    "https://app.codesignal.com/profile/" + author.get("username").toString(),
-                                                    author.get("avatar") != null ? author.get("avatar").toString() : null);
-                                            eb.setTitle(challenge.get("name").toString());
+                                                    author.get("username").textValue(),
+                                                    "https://app.codesignal.com/profile/" + author.get("username").textValue(),
+                                                    author.get("avatar") != null ? author.get("avatar").textValue() : null);
+                                            eb.setTitle(challenge.get("name").textValue());
                                             eb.setDescription(parts[0].substring(0, Math.min(parts[0].length(), 2000)));
                                         } else if (headers[i - 1].toLowerCase().contains("example")) {
                                             eb.setTitle("Example");
@@ -138,17 +135,16 @@ class ChallengeWatcher {
                                         eb.setColor(color);
 
                                         if (i == parts.length - 1) {
-                                            Map<Object, Object> io = (Map<Object, Object>) task.get("io");
-                                            List<Map<Object, Object>> input = (List<Map<Object, Object>>) io.get(
-                                                    "input");
-                                            Map<Object, Object> output = (Map<Object, Object>) io.get("output");
+                                            JsonNode io = task.get("io");
+                                            JsonNode input = io.get("input");
+                                            JsonNode output = io.get("output");
 
-                                            String inputBlock = input.stream().map(arg ->
+                                            String inputBlock = StreamSupport.stream(input.spliterator(), false).map(arg ->
                                                     String.format("*%s* `%s`: %s",
-                                                            arg.get("type"),
-                                                            arg.get("name"),
+                                                            arg.get("type").textValue(),
+                                                            arg.get("name").textValue(),
                                                             StringEscapeUtils.unescapeHtml4(
-                                                                    List.of(arg.get("description").toString().split(
+                                                                    List.of(arg.get("description").textValue().split(
                                                                             "\n")).stream().filter(
                                                                                     l -> l.strip().length() > 1
                                                                     ).collect(Collectors.joining("\n"))
@@ -158,9 +154,9 @@ class ChallengeWatcher {
 
                                             eb.addField("Input", inputBlock, true);
                                             eb.addField("Output", String.format("*%s*: %s",
-                                                    output.get("type"),
+                                                    output.get("type").textValue(),
                                                     StringEscapeUtils.unescapeHtml4(
-                                                            output.get("description").toString()
+                                                            output.get("description").textValue()
                                                     ).replaceAll("</?code>", "```")
                                             ), true);
                                         }
@@ -169,18 +165,30 @@ class ChallengeWatcher {
                                     }
 
                                     EmbedBuilder eb = new EmbedBuilder();
-                                    eb.addField("Reward", String.format("%s", challenge.get("reward")), true);
-                                    eb.addField("Duration", String.format("%s day(s)",
-                                            (int) challenge.get("duration") / 1000 / 3600 / 24),
+                                    eb.addField(
+                                            "Reward",
+                                            challenge.get("reward") != null
+                                                    ? challenge.get("reward").asText()
+                                                    : "N/A",
                                             true);
-                                    eb.addField("Visibility", String.format("%s", challenge.get("visibility")),
+                                    eb.addField(
+                                            "Duration",
+                                            String.format("%s day(s)",
+                                            challenge.get("duration").intValue() / 1000 / 3600 / 24),
                                             true);
-                                    eb.addField("Problem Type", String.format("%s", challenge.get("generalType")),
+                                    eb.addField("Visibility", challenge.get("visibility").textValue(),
                                             true);
-                                    eb.addField("Ranking Type", String.format("%s", challenge.get("type")),
+                                    eb.addField("Problem Type", challenge.get("generalType").textValue(),
                                             true);
-                                    eb.addField("Difficulty", String.format("%s", task.get("difficulty")), true);
-                                    eb.addField("Task ID", String.format("%s", challenge.get("taskId")), true);
+                                    eb.addField("Ranking Type", challenge.get("type").textValue(),
+                                            true);
+                                    eb.addField(
+                                            "Difficulty",
+                                            challenge.get("difficulty") != null
+                                                    ? challenge.get("difficulty").asText()
+                                                    : "N/A",
+                                            true);
+                                    eb.addField("Task ID", challenge.get("taskId").textValue(), true);
                                     eb.setFooter(
                                             "Have suggestions? Bug reports? Send them to @builder",
                                             "https://cdn.discordapp.com/emojis/493515691941560333.png");

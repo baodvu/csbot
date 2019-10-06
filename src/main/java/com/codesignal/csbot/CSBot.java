@@ -17,6 +17,7 @@ public class CSBot {
 
     public static void main(String[] args) throws Exception {
         logger.info("Starting up Codesignal Bot");
+        logger.info(String.format("Environment variables: env=%s", System.getenv("ENV")));
 
         // Exception logging
         Sentry.init();

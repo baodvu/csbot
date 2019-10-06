@@ -1,23 +1,25 @@
 package com.codesignal.csbot.adapters.codesignal.message;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 public class ResultMessage extends Message {
-    private Object result;
+    private JsonNode result;
 
     public ResultMessage() {
         this(null);
     }
 
-    public ResultMessage(Object result) {
+    public ResultMessage(JsonNode result) {
         super("result");
         this.result = result;
     }
 
-    public Object getResult() {
+    public JsonNode getResult() {
         return result;
     }
 
-    public void setResult(Object result) {
+    public void setResult(JsonNode result) {
         this.result = result;
     }
 

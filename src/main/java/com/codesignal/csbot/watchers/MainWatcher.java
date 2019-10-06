@@ -22,8 +22,9 @@ public class MainWatcher {
 
         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
 
+        boolean isProd = "prod".equals(System.getenv("ENV"));
         ChallengeWatcher officialChallengeWatcher = new ChallengeWatcher(
-                "all", new Color(0xfebe1e), "<@&493536203447074826>");
+                "all", new Color(0xfebe1e), isProd ? "<@&493536203447074826>" : "<tag_removed>");
         service.scheduleAtFixedRate(
                 () -> officialChallengeWatcher.run(discordClient),
                 0,
@@ -31,7 +32,7 @@ public class MainWatcher {
                 TimeUnit.SECONDS);
 
         ChallengeWatcher communityChallengeWatcher = new ChallengeWatcher(
-                "community", new Color(0xabfe1e), "<@&547589061909413926>");
+                "community", new Color(0xabfe1e), isProd ? "<@&547589061909413926>" : "<tag_removed>");
         service.scheduleAtFixedRate(
                 () -> communityChallengeWatcher.run(discordClient),
                 0,

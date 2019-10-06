@@ -5,6 +5,7 @@ import com.codesignal.csbot.adapters.codesignal.CodesignalClientSingleton;
 import com.codesignal.csbot.adapters.codesignal.message.GetUserFeedMessage;
 import com.codesignal.csbot.adapters.codesignal.message.Message;
 import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
+import com.fasterxml.jackson.databind.JsonNode;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
@@ -29,30 +30,26 @@ public class GetCSDailyHandler extends AbstractCommandHandler {
         this.buildArgParser();
     }
 
-    @SuppressWarnings("unchecked")
     public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
         this.parseArgs(event);
         CodesignalClient csClient = CodesignalClientSingleton.getInstance();
 
-        Message message = new GetUserFeedMessage("all");
+        Message message = new GetUserFeedMessage("all", 0, 1);
         csClient.send(message, (ResultMessage resultMessage) -> {
-            LinkedHashMap<Object, Object> result = (LinkedHashMap<Object, Object>) resultMessage.getResult();
-            ArrayList<LinkedHashMap<Object, Object>> feed =
-                    (ArrayList<LinkedHashMap<Object, Object>>) result.get("feed");
-            LinkedHashMap<Object, Object> challenge = (LinkedHashMap<Object, Object>) feed.get(0).get("challenge");
+            JsonNode challenge = resultMessage.getResult().at("/feed/0/challenge");
             EmbedBuilder eb = new EmbedBuilder();
             eb.setTitle("Latest official challenge", null);
-            eb.addField("Name", String.format("%s", challenge.get("name")), true);
-            eb.addField("Task ID", String.format("%s", challenge.get("taskId")), true);
-            eb.addField("Challenge ID", String.format("%s", challenge.get("_id")), true);
-            eb.addField("Author ID", String.format("%s", challenge.get("authorId")), true);
-            eb.addField("Status", String.format("%s", challenge.get("status")), true);
-            eb.addField("Visibility", String.format("%s", challenge.get("visibility")), true);
-            eb.addField("Type", String.format("%s", challenge.get("type")), true);
-            eb.addField("General Type", String.format("%s", challenge.get("generalType")), true);
-            eb.addField("Reward", String.format("%s", challenge.get("reward")), true);
-            eb.addField("First Solution", String.format("%s", challenge.get("firstSolution")), true);
-            eb.addField("Solution Count", String.format("%s", challenge.get("solutionCount")), true);
+            eb.addField("Name", String.format("%s", challenge.get("name").textValue()), true);
+            eb.addField("Task ID", String.format("%s", challenge.get("taskId").textValue()), true);
+            eb.addField("Challenge ID", String.format("%s", challenge.get("_id").textValue()), true);
+            eb.addField("Author ID", String.format("%s", challenge.get("authorId").textValue()), true);
+            eb.addField("Status", String.format("%s", challenge.get("status").textValue()), true);
+            eb.addField("Visibility", String.format("%s", challenge.get("visibility").textValue()), true);
+            eb.addField("Type", String.format("%s", challenge.get("type").textValue()), true);
+            eb.addField("General Type", String.format("%s", challenge.get("generalType").textValue()), true);
+            eb.addField("Reward", String.format("%s", challenge.get("reward").textValue()), true);
+            eb.addField("First Solution", String.format("%s", challenge.get("firstSolution").textValue()), true);
+            eb.addField("Solution Count", String.format("%s", challenge.get("solutionCount").intValue()), true);
             eb.setColor(new Color(0xF4EB41));
             event.getChannel().sendMessage(eb.build()).queue();
         });

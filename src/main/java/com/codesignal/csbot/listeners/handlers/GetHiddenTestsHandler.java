@@ -10,6 +10,7 @@ import com.codesignal.csbot.wss.CSWebSocket;
 import com.codesignal.csbot.wss.CSWebSocketImpl;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
@@ -62,7 +63,6 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                 .help("A delay (in seconds) is needed as CodeSignal rate-limits");
     }
 
-    @SuppressWarnings("unchecked")
     public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
         if (!event.getAuthor().getName().equals("ephemeraldream") && (event.getMember() == null || !event.getMember().hasPermission(Permission.ADMINISTRATOR))) {
             // Only admins can do dis.
@@ -82,22 +82,21 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
         csClient.send(
                 new GetDetailsMessage(challengeId),
                 detailsResult -> {
-                    Map<Object, Object> result = (Map<Object, Object>) detailsResult.getResult();
-                    Map<Object, Object> challenge = (Map<Object, Object>) result.get("challenge");
-                    String challengeType = (String) challenge.get("type");
+                    JsonNode challenge = detailsResult.getResult().get("challenge");
+                    String challengeType = challenge.get("type").textValue();
                     if (challengeType.equals("shortestSolution")) {
                         EmbedBuilder eb = new EmbedBuilder();
-                        eb.setAuthor(String.format("%s", challenge.get("name")), null,
+                        eb.setAuthor(String.format("%s", challenge.get("name").textValue()), null,
                                 "https://cdn.discordapp.com/emojis/580592986136641536.png");
-                        eb.addField("Task ID", String.format("%s", challenge.get("taskId")), true);
-                        eb.addField("Challenge ID", String.format("%s", challenge.get("_id")), true);
-                        eb.addField("Name", String.format("%s", challenge.get("name")), true);
+                        eb.addField("Task ID", String.format("%s", challenge.get("taskId").textValue()), true);
+                        eb.addField("Challenge ID", String.format("%s", challenge.get("_id").textValue()), true);
+                        eb.addField("Name", String.format("%s", challenge.get("name").textValue()), true);
                         eb.setColor(new Color(0xF4EB41));
                         event.getChannel().sendMessage(eb.build()).queue();
                         Message message =
                                 event.getChannel().sendMessage("<a:load:508808716376866826> Hacking into the mainframe...").complete();
 
-                        String taskId = (String) challenge.get("taskId");
+                        String taskId = challenge.get("taskId").textValue();
                         csClient.send(new GetSampleTestsMessage(taskId),
                                 sampleResult -> {
                                     Thread extractTestThread = new Thread(() ->
@@ -116,7 +115,6 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
         );
     }
 
-    @SuppressWarnings("unchecked")
     private void extractHiddenTestData(
             ResultMessage resultMessage,
             MessageReceivedEvent event,
@@ -133,16 +131,16 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
             // 1. Retrieve sample tests
             int sampleCount = 0;
             int hiddenCount = 0;
-            List<Map<Object, Object>> sampleTests = (List<Map<Object, Object>>) resultMessage.getResult();
+            JsonNode sampleTests = resultMessage.getResult();
             ObjectMapper objMapper = new ObjectMapper();
             objMapper.configure(JsonGenerator.Feature.QUOTE_FIELD_NAMES, true);
             objMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, false);
-            for (Map<Object, Object> test : sampleTests) {
-                if (test.get("isHidden") != null && (boolean) test.get("isHidden")) {
+            for (JsonNode test : sampleTests) {
+                if (test.get("isHidden") != null && test.get("isHidden").asBoolean()) {
                     hiddenCount++;
                     continue;
                 }
-                if ((boolean) test.get("truncated")) {
+                if (test.get("truncated").asBoolean()) {
                     throw new RuntimeException("I/O is truncated. Current version doesn't support this.");
                 }
                 sampleCount++;
@@ -217,9 +215,7 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
                                                 .replace("DIGIT_TO_CHECK", Integer.toString(i)),
                                         "py"),
                                 submitTaskResponse -> {
-                                    Map<Object, Object> result =
-                                            (Map<Object, Object>) submitTaskResponse.getResult();
-                                    bits.put(idx, Integer.parseInt(result.get("correctTestCount").toString()));
+                                    bits.put(idx, submitTaskResponse.getResult().get("correctTestCount").intValue());
                                     bitsCountDown.countDown();
                                 }
                         );
@@ -231,7 +227,7 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
 
                     new Thread(() -> {
                         try {
-                            boolean cdReturnValue = bitsCountDown.await(15, TimeUnit.SECONDS);
+                            boolean cdReturnValue = bitsCountDown.await(30, TimeUnit.SECONDS);
                             if (!cdReturnValue) {
                                 // Timeout waiting on bits to come back.
                                 failed.set(true);
