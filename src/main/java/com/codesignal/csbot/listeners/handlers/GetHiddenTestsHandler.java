@@ -50,7 +50,7 @@ public class GetHiddenTestsHandler extends CodeSignalCommandHandler {
     public GetHiddenTestsHandler() {
         ArgumentParser parser = this.buildArgParser();
         parser.addArgument("-cid", "--challenge-id")
-                .help("Challenge ID").required(true);
+                .help("Challenge ID");
         parser.addArgument("-t", "--test-number")
                 .type(Integer.class)
                 .setDefault(0)
