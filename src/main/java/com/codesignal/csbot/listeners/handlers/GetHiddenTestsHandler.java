@@ -168,6 +168,8 @@ public class GetHiddenTestsHandler extends CodeSignalCommandHandler {
                     + "\n<a:load:508808716376866826> Extracting data from hidden test #" + testNumber + ":\n";
 
             if (testNumber >= hiddenCount || testNumber < 0) {
+                message.editMessage("✓ Hacking into the mainframe..." +
+                        "\n✓ Checking for hidden tests...").queue();
                 event.getChannel().sendMessage("Test number is not valid.").queue();
                 return;
             }
@@ -185,7 +187,7 @@ public class GetHiddenTestsHandler extends CodeSignalCommandHandler {
                     "visibleInput for visibleInput, visibleOutput in visibleIO)], key=str)");
             code.add("alwaysIncorrectOutput = None");
             code.add("currentTargetIndex = " + testNumber);
-            code.add("currentTargetInput = json.dumps(filteredTestInput[currentTargetIndex], separators=(',', ':'))");
+            code.add("currentTargetInput = json.dumps(filteredTestInput[currentTargetIndex], separators=(',', ':'))[1:-1]");
             code.add("currentTargetCharacter = currentTargetInput[CHARACTER_TO_CHECK]");
             code.add("currentTargetOrd = ord(currentTargetCharacter)");
             code.add(String.format(
