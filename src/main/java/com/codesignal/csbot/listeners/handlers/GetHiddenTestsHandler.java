@@ -6,6 +6,7 @@ import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
 import com.codesignal.csbot.adapters.codesignal.message.SubmitTaskAnswerMessage;
 import com.codesignal.csbot.adapters.codesignal.message.challengeservice.GetDetailsMessage;
 import com.codesignal.csbot.adapters.codesignal.message.task.GetSampleTestsMessage;
+import com.codesignal.csbot.utils.Confucius;
 import com.codesignal.csbot.wss.CSWebSocket;
 import com.codesignal.csbot.wss.CSWebSocketImpl;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -28,12 +29,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
-public class GetHiddenTestsHandler extends AbstractCommandHandler {
+public class GetHiddenTestsHandler extends CodeSignalCommandHandler {
     private static final Logger log = LoggerFactory.getLogger(GetHiddenTestsHandler.class);
     private static List<String> names = List.of("cshidden", "cs-hidden", "csh");
 
@@ -64,14 +66,27 @@ public class GetHiddenTestsHandler extends AbstractCommandHandler {
     }
 
     public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
-        if (!event.getAuthor().getName().equals("ephemeraldream") && (event.getMember() == null || !event.getMember().hasPermission(Permission.ADMINISTRATOR))) {
+        if (event.getMember() == null || !event.getMember().hasPermission(Permission.ADMINISTRATOR)) {
             // Only admins can do dis.
-            event.getChannel().sendMessage("hack it yourself, bai.").queue();
+            event.getChannel().sendMessage(
+                    String.format("As Confucius once said:\n> %s",
+                            new Confucius().getRandomSaying(true, false))
+            ).queue();
             return;
         }
         Namespace ns = this.parseArgs(event);
 
-        String challengeId = ns.getString("challenge_id");
+        final String challengeId;
+        if (ns.getString("challenge-id") == null) {
+            try {
+                challengeId = getDailyChallengeId().get();
+            } catch (InterruptedException | ExecutionException e) {
+                e.printStackTrace();
+                return;
+            }
+        } else {
+            challengeId = ns.getString("challenge-id");
+        }
         int testNumber = ns.getInt("test_number");
         int batchSize = ns.getInt("batch_size");
         // Here we divided by MAX_CONCURRENT so delay would be the time it would take us back to
