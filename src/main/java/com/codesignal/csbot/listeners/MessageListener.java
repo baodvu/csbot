@@ -33,6 +33,7 @@ public class MessageListener extends ListenerAdapter {
             new PingCommandHandler(),
             new SayHandler(),
             new UndeleteCommandHandler(),
+            new WolframAlphaHandler(),
             new YoutubeDownloadHandler()
     );
     private static final Logger logger = LoggerFactory.getLogger(MessageListener.class);
