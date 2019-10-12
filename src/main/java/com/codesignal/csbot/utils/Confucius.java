@@ -1,14 +1,14 @@
 package com.codesignal.csbot.utils;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.io.IOUtils;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
-import java.nio.file.Files;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Confucius {
     private List<String> sayings;
@@ -20,15 +20,14 @@ public class Confucius {
     }
 
     private List<String> loadFile(String filePath) {
-        URL fileUrl = getClass().getClassLoader().getResource(filePath);
-        if (fileUrl == null) {
-            return Lists.newArrayList();
+        InputStream in = getClass().getClassLoader().getResourceAsStream(filePath);
+
+        if (in == null) {
+            return new ArrayList<>();
         }
-
-        File file = new File(fileUrl.getFile());
-
-        try (Stream<String> lines = Files.lines(file.toPath())) {
-            return lines.collect(Collectors.toList());
+        
+        try {
+            return Arrays.asList(IOUtils.toString(in, StandardCharsets.UTF_8).split("\\r?\\n"));
         } catch (IOException exp) {
             exp.printStackTrace();
             return Lists.newArrayList();
