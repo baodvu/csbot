@@ -2,7 +2,9 @@ package com.codesignal.csbot.listeners.handlers;
 
 import com.codesignal.csbot.models.DiscordMessageVersioned;
 import com.codesignal.csbot.storage.Storage;
+import com.codesignal.csbot.utils.Confucius;
 import com.datastax.driver.core.utils.UUIDs;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -32,6 +34,14 @@ public class UndeleteCommandHandler extends AbstractCommandHandler {
     }
 
     public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
+        if (event.getMember() == null || !event.getMember().hasPermission(Permission.ADMINISTRATOR)) {
+            // Only admins can do dis.
+            event.getChannel().sendMessage(
+                    String.format("As Confucius once said:\n> %s",
+                            new Confucius().getRandomSaying(true, false))
+            ).queue();
+            return;
+        }
         Namespace ns = this.parseArgs(event);
         int lineCount = ns.getInt("lines");
 

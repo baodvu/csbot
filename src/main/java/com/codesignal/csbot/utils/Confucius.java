@@ -25,7 +25,7 @@ public class Confucius {
         if (in == null) {
             return new ArrayList<>();
         }
-        
+
         try {
             return Arrays.asList(IOUtils.toString(in, StandardCharsets.UTF_8).split("\\r?\\n"));
         } catch (IOException exp) {
