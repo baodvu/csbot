@@ -8,6 +8,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
+
 public class MethodMessageTest {
     @Test
     public void whenSerializingUsingJsonSerialize_thenCorrect() throws JsonProcessingException {
