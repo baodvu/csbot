@@ -33,7 +33,7 @@ public class CSWebSocketImpl implements CSWebSocket {
     }
 
     private final int TIMEOUT_IN_MS = 5000;
-    private final int LINE_LIMIT = 160;
+    private final int LINE_LIMIT = 240;
     private final ConcurrentHashMap<Long, Callback> callbacks = new ConcurrentHashMap<>();
     private volatile AtomicInteger messageId;
     private volatile CountDownLatch isBooting;
@@ -137,7 +137,7 @@ public class CSWebSocketImpl implements CSWebSocket {
                             "sha-256"
                     ));
                     isBooting.countDown();
-                } else if (message.contains("a[\"{\\\"msg\\\":\\\"result\\\"")) {
+                } else if (message.contains("\"id\\\":")) {
                     try {
                         ObjectMapper objectMapper = new ObjectMapper();
                         // substring(1) to remove the prefix "a" from codesignal server.

@@ -15,7 +15,7 @@ public class ResultMessageTest {
     public void whenSerializingUsingJsonSerialize_thenCorrect() throws IOException {
         Message message = new ResultMessage(new ObjectMapper().readTree("1563673860252"));
 
-        String expected = "{\"msg\":\"result\",\"id\":\"0\",\"error\":null,\"result\":1563673860252}";
+        String expected = "{\"msg\":\"result\",\"id\":\"0\",\"result\":1563673860252}";
         String actual = new ObjectMapper().writeValueAsString(message);
         assertEquals(expected, actual);
     }

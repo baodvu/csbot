@@ -14,7 +14,7 @@ public class MessageTest {
     public void whenSerializingUsingJsonSerialize_thenCorrect() throws JsonProcessingException {
         Message message = new Message("method");
 
-        String expected = "{\"msg\":\"method\",\"id\":\"0\",\"error\":null}";
+        String expected = "{\"msg\":\"method\",\"id\":\"0\"}";
         String actual = new ObjectMapper().writeValueAsString(message);
         assertEquals(expected, actual);
     }

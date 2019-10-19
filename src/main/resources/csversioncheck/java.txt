@@ -1,0 +1,11 @@
+int add(int a, int b) throws IOException {
+    String command = "java --version";
+    Process p = Runtime.getRuntime().exec(command);
+
+    try (Scanner sc = new Scanner(p.getInputStream())) {
+        while (sc.hasNext()) {
+            System.out.println(sc.nextLine());
+        }
+    }
+    return a + b;
+}

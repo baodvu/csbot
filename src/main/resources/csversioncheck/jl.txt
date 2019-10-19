@@ -1,0 +1,4 @@
+function add(a::Int32, b::Int32)
+  print(read(`julia --version`, String))
+  a + b
+end

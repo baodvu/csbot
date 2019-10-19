@@ -29,9 +29,11 @@ public class MessageListener extends ListenerAdapter {
     private static final List<CommandHandler> COMMAND_HANDLERS = List.of(
             new GetCSDailyHandler(),
             new GetHiddenTestsHandler(),
+            new GetLanguageVersionHandler(),
             new GetTopSubHandler(),
             new PingCommandHandler(),
             new SayHandler(),
+            new SendMethodMessageHandler(),
             new UndeleteCommandHandler(),
             new WolframAlphaHandler(),
             new YoutubeDownloadHandler()

@@ -13,7 +13,7 @@ public class MethodMessageTest {
     public void whenSerializingUsingJsonSerialize_thenCorrect() throws JsonProcessingException {
         MethodMessage message = new MethodMessage("GetUserFeedMessage", List.of("a", "b"));
 
-        String expected = "{\"msg\":\"method\",\"id\":\"0\",\"error\":null,\"method\":\"GetUserFeedMessage\",\"params\":[\"a\",\"b\"]}";
+        String expected = "{\"msg\":\"method\",\"id\":\"0\",\"method\":\"GetUserFeedMessage\",\"params\":[\"a\",\"b\"]}";
         String actual = new ObjectMapper().writeValueAsString(message);
         assertEquals(expected, actual);
     }

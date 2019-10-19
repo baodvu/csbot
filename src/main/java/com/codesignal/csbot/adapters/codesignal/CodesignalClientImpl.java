@@ -2,10 +2,13 @@ package com.codesignal.csbot.adapters.codesignal;
 
 import com.codesignal.csbot.adapters.codesignal.message.Callback;
 import com.codesignal.csbot.adapters.codesignal.message.Message;
+import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
 import com.codesignal.csbot.wss.CSWebSocket;
 import com.codesignal.csbot.wss.CSWebSocketImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.CompletableFuture;
 
 
 class CodesignalClientImpl implements CodesignalClient {
@@ -24,5 +27,13 @@ class CodesignalClientImpl implements CodesignalClient {
     @Override
     public void send(Message message, Callback callback) {
         connection.send(message, callback);
+    }
+
+    @Override
+    public CompletableFuture<ResultMessage> send(Message message) {
+        CompletableFuture<ResultMessage> completableFuture = new CompletableFuture<>();
+        connection.send(message, (ResultMessage resultMessage)
+                -> completableFuture.complete(resultMessage));
+        return completableFuture;
     }
 }

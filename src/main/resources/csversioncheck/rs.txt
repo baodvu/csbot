@@ -1,0 +1,12 @@
+use std::process::Command;
+use std::io::{Write, self};
+
+fn add(a: i32, b: i32) -> i32 {
+    let output = Command::new("rustc")
+                         .arg("--version")
+                         .output()
+                         .expect("failed to execute process");
+
+    io::stdout().write(&output.stdout);
+    a + b
+}

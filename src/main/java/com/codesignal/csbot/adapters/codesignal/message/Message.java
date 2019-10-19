@@ -1,12 +1,14 @@
 package com.codesignal.csbot.adapters.codesignal.message;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.JsonNode;
 
-import java.util.Map;
 
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class Message {
     private String msg;
     private String id;
-    private Map<String, Object> error;
+    private JsonNode error;
 
     Message() {
         this("unknown", "0");
@@ -37,11 +39,11 @@ public class Message {
         this.id = id;
     }
 
-    public Map<String, Object> getError() {
+    public JsonNode getError() {
         return error;
     }
 
-    public void setError(Map<String, Object> error) {
+    public void setError(JsonNode error) {
         this.error = error;
     }
 
