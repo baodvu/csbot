@@ -24,16 +24,16 @@ public class CSWebSocketImpl implements CSWebSocket {
     private static final Logger log = LoggerFactory.getLogger(CSWebSocketImpl.class);
     private final static AtomicInteger wssCount = new AtomicInteger(0);
 
-    private static List<CodesignalUser> CODESIGNAL_USERS;
-    public static int MAX_CONCURRENT;
+    private static final List<CodesignalUser> CODESIGNAL_USERS;
+    public static final int MAX_CONCURRENT;
     static {
         Storage storage = new Storage();
         CODESIGNAL_USERS = storage.getAllUsers();
         MAX_CONCURRENT = CODESIGNAL_USERS.size();
     }
 
-    private final int TIMEOUT_IN_MS = 5000;
-    private final int LINE_LIMIT = 240;
+    private static final int TIMEOUT_IN_MS = 5000;
+    private static final int LINE_LIMIT = 240;
     private final ConcurrentHashMap<Long, Callback> callbacks = new ConcurrentHashMap<>();
     private volatile AtomicInteger messageId;
     private volatile CountDownLatch isBooting;
@@ -77,10 +77,6 @@ public class CSWebSocketImpl implements CSWebSocket {
         } catch (JsonProcessingException exception) {
             // pass
         }
-    }
-
-    public void send(Message message) {
-        send(message, (ResultMessage result) -> {});
     }
 
     private void sendWithoutChecking(Message message, Callback callback) {
@@ -127,7 +123,7 @@ public class CSWebSocketImpl implements CSWebSocket {
                 if (message.equals("a[\"{\\\"msg\\\":\\\"ping\\\"}\"]")) {
                     millisecondsSinceEpoch = System.currentTimeMillis();
                     ws.sendText("[\"{\\\"msg\\\":\\\"pong\\\"}\"]");
-                } else if (message.contains("a[\"{\\\"msg\\\":\\\"connected\\\"")) {
+                } else if (message.startsWith("a[\"{\\\"msg\\\":\\\"connected\\\"")) {
                     millisecondsSinceEpoch = System.currentTimeMillis();
                     sendWithoutChecking(new GetServerTimeMessage());
                     CodesignalUser user = CODESIGNAL_USERS.get(wssCount.getAndIncrement() % CODESIGNAL_USERS.size());
@@ -137,7 +133,7 @@ public class CSWebSocketImpl implements CSWebSocket {
                             "sha-256"
                     ));
                     isBooting.countDown();
-                } else if (message.contains("\"id\\\":")) {
+                } else if (message.startsWith("a[\"{\\\"msg\\\":\\\"result\\\"")) {
                     try {
                         ObjectMapper objectMapper = new ObjectMapper();
                         // substring(1) to remove the prefix "a" from codesignal server.

@@ -20,8 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class Storage {
-    private static final Logger logger = LoggerFactory.getLogger(Storage.class);
-    private CassandraOperations cassandraOps;
+    private final CassandraOperations cassandraOps;
 
     public Storage() {
         String CONTACT_POINTS = System.getenv("CASSANDRA_CONTACT_POINTS");

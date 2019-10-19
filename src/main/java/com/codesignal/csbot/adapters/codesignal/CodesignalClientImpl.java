@@ -32,8 +32,7 @@ class CodesignalClientImpl implements CodesignalClient {
     @Override
     public CompletableFuture<ResultMessage> send(Message message) {
         CompletableFuture<ResultMessage> completableFuture = new CompletableFuture<>();
-        connection.send(message, (ResultMessage resultMessage)
-                -> completableFuture.complete(resultMessage));
+        connection.send(message, completableFuture::complete);
         return completableFuture;
     }
 }

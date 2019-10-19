@@ -6,7 +6,7 @@ import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import java.util.List;
 
 public class PingCommandHandler extends AbstractCommandHandler {
-    private static List<String> names = List.of("ping", "ding");
+    private static final List<String> names = List.of("ping", "ding");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "A simple handler example"; }

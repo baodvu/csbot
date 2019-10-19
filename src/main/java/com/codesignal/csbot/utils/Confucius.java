@@ -11,8 +11,8 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Confucius {
-    private List<String> sayings;
-    private List<String> funny_sayings;
+    private final List<String> sayings;
+    private final List<String> funny_sayings;
 
     public Confucius() {
         sayings = loadFile("confucius/sayings.txt");

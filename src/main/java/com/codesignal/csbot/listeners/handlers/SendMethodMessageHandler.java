@@ -19,7 +19,7 @@ import java.awt.*;
 import java.util.List;
 
 public class SendMethodMessageHandler extends AbstractCommandHandler{
-    private static List<String> names = List.of("cssendraw");
+    private static final List<String> names = List.of("cssendraw");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Execute a raw WSS method request"; }

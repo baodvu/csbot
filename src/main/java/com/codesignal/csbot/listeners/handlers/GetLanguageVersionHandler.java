@@ -33,7 +33,7 @@ public class GetLanguageVersionHandler extends AbstractCommandHandler {
             "py3",
             "rs"
     );
-    private static List<String> names = List.of("cslv", "cs-lang-version");
+    private static final List<String> names = List.of("cslv", "cs-lang-version");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Get language version"; }

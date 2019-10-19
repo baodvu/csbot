@@ -10,17 +10,9 @@ public class Message {
     private String id;
     private JsonNode error;
 
-    Message() {
-        this("unknown", "0");
-    }
-
-    Message(String msg) {
-        this(msg, "0");
-    }
-
-    private Message(String msg, String id) {
+    public Message(String msg) {
         this.msg = msg;
-        this.id = id;
+        this.id = "0";
     }
 
     public String getMsg() {

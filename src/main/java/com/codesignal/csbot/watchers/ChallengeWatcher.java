@@ -31,19 +31,19 @@ class ChallengeWatcher {
     private static final Logger log = LoggerFactory.getLogger(ChallengeWatcher.class);
 
     // Reduce calls to database by caching processed ids.
-    private static Set<String> notifiedChallengeIds = new HashSet<>();
+    private static final Set<String> notifiedChallengeIds = new HashSet<>();
 
     // Cassandra database.
-    private Storage storage = new Storage();
-    private CodesignalClient csClient = CodesignalClientSingleton.getInstance();
+    private final Storage storage = new Storage();
+    private final CodesignalClient csClient = CodesignalClientSingleton.getInstance();
 
     // If the challenge is too old we shouldn't dig it up.
     private final int MAX_LOOKBACK_TIME_IN_MS = 1000 * 60 * 60;  // 1 hour
 
     // Setting
-    private String tab;
-    private Color color;
-    private String notificationTag;
+    private final String tab;
+    private final Color color;
+    private final String notificationTag;
 
     ChallengeWatcher(String tab, Color color, String notificationTag) {
         this.tab = tab;

@@ -12,7 +12,7 @@ import java.util.List;
 
 public class WolframAlphaHandler extends AbstractCommandHandler {
     private static final String WA_APP_ID = "33JG8A-83ALGXGR86";
-    private static List<String> names = List.of("wolfram", "wolframalpha", "wa", "eval", "calc");
+    private static final List<String> names = List.of("wolfram", "wolframalpha", "wa", "eval", "calc");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Query Wolfram Alpha API"; }

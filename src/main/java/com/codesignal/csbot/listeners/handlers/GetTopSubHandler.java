@@ -15,8 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -63,7 +61,7 @@ public class GetTopSubHandler extends CodeSignalCommandHandler {
             "ts",
             "vb"
     );
-    private static List<String> names = List.of("cstop", "cs-top", "cst");
+    private static final List<String> names = List.of("cstop", "cs-top", "cst");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Retrieve CodeSignal top solutions"; }

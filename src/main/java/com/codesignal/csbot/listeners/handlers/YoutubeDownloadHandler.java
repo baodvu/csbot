@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 
 public class YoutubeDownloadHandler extends AbstractCommandHandler {
     private static final Logger log = LoggerFactory.getLogger(YoutubeDownloadHandler.class);
-    private static List<String> names = List.of("youtube-dl");
+    private static final List<String> names = List.of("youtube-dl");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Download an online video"; }

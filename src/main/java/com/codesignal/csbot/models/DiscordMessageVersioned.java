@@ -33,10 +33,6 @@ public class DiscordMessageVersioned implements Serializable {
         this.content = content;
     }
 
-    public long getChannelId() {
-        return channelId;
-    }
-
     public long getMessageId() {
         return messageId;
     }

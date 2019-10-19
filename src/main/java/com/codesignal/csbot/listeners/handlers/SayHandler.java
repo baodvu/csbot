@@ -10,7 +10,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import java.util.List;
 
 public class SayHandler extends AbstractCommandHandler{
-    private static List<String> names = List.of("say");
+    private static final List<String> names = List.of("say");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Tell the bot to say something."; }

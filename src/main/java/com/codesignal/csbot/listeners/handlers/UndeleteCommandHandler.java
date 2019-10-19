@@ -18,8 +18,8 @@ import java.util.List;
 
 
 public class UndeleteCommandHandler extends AbstractCommandHandler {
-    private static List<String> names = List.of("undelete", "ud", "undel", "tail");
-    private Storage storage = new Storage();
+    private static final List<String> names = List.of("undelete", "ud", "undel", "tail");
+    private final Storage storage = new Storage();
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Shows deleted/edited messages"; }

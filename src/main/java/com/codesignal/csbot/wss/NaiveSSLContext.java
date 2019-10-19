@@ -43,7 +43,7 @@ import javax.net.ssl.X509TrustManager;
  *
  * @author Takahiko Kawasaki
  */
-public class NaiveSSLContext
+class NaiveSSLContext
 {
     private NaiveSSLContext()
     {

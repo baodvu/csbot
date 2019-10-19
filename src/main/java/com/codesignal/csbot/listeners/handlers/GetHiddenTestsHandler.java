@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -37,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class GetHiddenTestsHandler extends CodeSignalCommandHandler {
     private static final Logger log = LoggerFactory.getLogger(GetHiddenTestsHandler.class);
-    private static List<String> names = List.of("cshidden", "cs-hidden", "csh");
+    private static final List<String> names = List.of("cshidden", "cs-hidden", "csh");
 
     public List<String> getNames() {
         return names;

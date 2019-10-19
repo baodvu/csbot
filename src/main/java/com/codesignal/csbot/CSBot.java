@@ -2,7 +2,6 @@ package com.codesignal.csbot;
 
 import com.codesignal.csbot.adapters.codesignal.CodesignalClientSingleton;
 import com.codesignal.csbot.listeners.MessageListener;
-import com.codesignal.csbot.utils.Confucius;
 import com.codesignal.csbot.watchers.MainWatcher;
 import io.sentry.Sentry;
 import net.dv8tion.jda.api.AccountType;
@@ -13,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class CSBot {
+class CSBot {
     private static final Logger logger = LoggerFactory.getLogger(CSBot.class);
 
     public static void main(String[] args) throws Exception {

@@ -39,9 +39,9 @@ public class MessageListener extends ListenerAdapter {
             new YoutubeDownloadHandler()
     );
     private static final Logger logger = LoggerFactory.getLogger(MessageListener.class);
-    private Storage storage = new Storage();
+    private final Storage storage = new Storage();
     private SpellChecker spellChecker;
-    private Map<String, CommandHandler> commandHandlerMap = new HashMap<>();
+    private final Map<String, CommandHandler> commandHandlerMap = new HashMap<>();
 
     public MessageListener() {
         buildLuceneDictionary();
