@@ -9,6 +9,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 
 class CodesignalClientImpl implements CodesignalClient {
@@ -30,9 +33,10 @@ class CodesignalClientImpl implements CodesignalClient {
     }
 
     @Override
-    public CompletableFuture<ResultMessage> send(Message message) {
+    public ResultMessage send(Message message, int timeout)
+            throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<ResultMessage> completableFuture = new CompletableFuture<>();
         connection.send(message, completableFuture::complete);
-        return completableFuture;
+        return completableFuture.get(timeout, TimeUnit.SECONDS);
     }
 }

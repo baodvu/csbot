@@ -16,6 +16,7 @@ import net.sourceforge.argparse4j.inf.Namespace;
 import org.apache.commons.lang3.StringUtils;
 
 import java.awt.*;
+import java.io.IOException;
 import java.util.List;
 
 public class SendMethodMessageHandler extends AbstractCommandHandler{
@@ -46,31 +47,31 @@ public class SendMethodMessageHandler extends AbstractCommandHandler{
 
         CodesignalClient csClient = CodesignalClientSingleton.getInstance();
 
-        ResultMessage resultMessage;
         try {
-            resultMessage = csClient.send(
-                    new MethodMessage(
-                            method,
-                            new ObjectMapper().readValue(params, new TypeReference<List<JsonNode>>() {})
-                    )
-            ).get();
-        } catch (Exception e) {
+            csClient.send(
+                new MethodMessage(
+                        method,
+                        new ObjectMapper().readValue(params, new TypeReference<List<JsonNode>>() {})
+                ),
+                (ResultMessage resultMessage) -> {
+                    EmbedBuilder eb = new EmbedBuilder();
+                    if (resultMessage.getResult() != null) {
+                        eb.addField("Response",
+                                StringUtils.abbreviate(String.format("%s", resultMessage.getResult()), 1024),
+                                false);
+                    }
+                    if (resultMessage.getError() != null) {
+                        eb.addField("Error",
+                                StringUtils.abbreviate(String.format("%s", resultMessage.getError()), 1024),
+                                false);
+                    }
+                    eb.setColor(new Color(0xF45964));
+                    event.getChannel().sendMessage(eb.build()).queue();
+                }
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
             event.getChannel().sendMessage(e.getMessage()).queue();
-            return;
         }
-
-        EmbedBuilder eb = new EmbedBuilder();
-        if (resultMessage.getResult() != null) {
-            eb.addField("Response",
-                    StringUtils.abbreviate(String.format("%s", resultMessage.getResult()), 1024),
-                    false);
-        }
-        if (resultMessage.getError() != null) {
-            eb.addField("Error",
-                    StringUtils.abbreviate(String.format("%s", resultMessage.getError()), 1024),
-                    false);
-        }
-        eb.setColor(new Color(0xF45964));
-        event.getChannel().sendMessage(eb.build()).queue();
     }
 }
