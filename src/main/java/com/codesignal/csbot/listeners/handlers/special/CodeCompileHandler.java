@@ -31,13 +31,26 @@ public class CodeCompileHandler implements SpecialCommandHandler {
             return size() > 100;
         }
     });
+    private static String PATTERN;
+    private static Pattern PATTERN_WITH_CAPTURE_GROUPS;
+
+    public CodeCompileHandler() {
+        boolean isProd = "prod".equals(System.getenv("ENV"));
+        if (isProd) {
+            PATTERN = "(?s)```[^\\s]+.*```";
+            PATTERN_WITH_CAPTURE_GROUPS = Pattern.compile("```([^\\s]+)\n(.*)```", Pattern.DOTALL);
+        } else {
+            PATTERN = "(?s)!```[^\\s]+.*```";
+            PATTERN_WITH_CAPTURE_GROUPS = Pattern.compile("!```([^\\s]+)\n(.*)```", Pattern.DOTALL);
+        }
+    }
 
     private boolean shouldNotProcessMessage(Message message) {
         if (message.getAuthor().isBot()) {
             return true;
         }
 
-        return !message.getContentRaw().matches("(?s)```[^\\s]+.*```");
+        return !message.getContentRaw().matches(PATTERN);
     }
 
     public void onMessageReceived(MessageReceivedEvent event) {
@@ -86,8 +99,7 @@ public class CodeCompileHandler implements SpecialCommandHandler {
                     "Slow down. There's a limit of 5 seconds between requests.").queue();
             return;
         }
-        Pattern pattern = Pattern.compile("```([^\\s]+)\n(.*)```", Pattern.DOTALL);
-        Matcher matcher = pattern.matcher(message.getContentRaw());
+        Matcher matcher = PATTERN_WITH_CAPTURE_GROUPS.matcher(message.getContentRaw());
 
         if (matcher.find()) {
             String lang = LanguageAbbreviation.toStandardized(matcher.group(1));
