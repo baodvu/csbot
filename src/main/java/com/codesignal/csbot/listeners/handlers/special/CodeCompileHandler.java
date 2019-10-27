@@ -4,7 +4,6 @@ import com.codesignal.csbot.adapters.codesignal.CodesignalClient;
 import com.codesignal.csbot.adapters.codesignal.CodesignalClientSingleton;
 import com.codesignal.csbot.adapters.codesignal.message.taskService.GetRunRawResultMessage;
 import com.codesignal.csbot.utils.LanguageAbbreviation;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.util.concurrent.RateLimiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Emote;
@@ -38,7 +37,7 @@ public class CodeCompileHandler implements SpecialCommandHandler {
             return true;
         }
 
-        return !message.getContentRaw().matches("(?s)dev```[^\\s]+.*```");
+        return !message.getContentRaw().matches("(?s)```[^\\s]+.*```");
     }
 
     public void onMessageReceived(MessageReceivedEvent event) {
@@ -87,7 +86,7 @@ public class CodeCompileHandler implements SpecialCommandHandler {
                     "Slow down. There's a limit of 5 seconds between requests.").queue();
             return;
         }
-        Pattern pattern = Pattern.compile("dev```([^\\s]+)\n(.*)```", Pattern.DOTALL);
+        Pattern pattern = Pattern.compile("```([^\\s]+)\n(.*)```", Pattern.DOTALL);
         Matcher matcher = pattern.matcher(message.getContentRaw());
 
         if (matcher.find()) {
