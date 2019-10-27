@@ -79,7 +79,7 @@ public class CodeCompileHandler implements SpecialCommandHandler {
             String lang = LanguageAbbreviation.toStandardized(matcher.group(1));
             if (null == lang) {
                 message.getChannel().sendMessage(String.format(
-                        "Can't find any language that matches \"%s\".", lang));
+                        "Can't find any language that matches \"%s\".", lang)).queue();
                 return;
             }
             String code = matcher.group(2);
