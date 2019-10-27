@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 @SuppressWarnings("UnstableApiUsage")  // It's been @Beta for 8 years (since 2011).
 public class CodeCompileHandler implements SpecialCommandHandler {
     private static final Logger log = LoggerFactory.getLogger(CodeCompileHandler.class);
+    private static final long LOADING_EMOTE_ID = 508808716376866826L;
 
     private static Map<Long, RateLimiter> rateLimiters = new HashMap<>();
     private static Set<String> lruCache = Collections.newSetFromMap(new LinkedHashMap<>(){
@@ -30,16 +31,16 @@ public class CodeCompileHandler implements SpecialCommandHandler {
         }
     });
 
-    private boolean shouldProcessMessage(Message message) {
+    private boolean shouldNotProcessMessage(Message message) {
         if (message.getAuthor().isBot()) {
-            return false;
+            return true;
         }
 
-        return message.getContentRaw().matches("(?s)```[^\\s]+.*```");
+        return !message.getContentRaw().matches("(?s)```[^\\s]+.*```");
     }
 
     public void onMessageReceived(MessageReceivedEvent event) {
-        if (!shouldProcessMessage(event.getMessage())) {
+        if (shouldNotProcessMessage(event.getMessage())) {
             return;
         }
         lruCache.add(event.getMessageId());
@@ -47,10 +48,22 @@ public class CodeCompileHandler implements SpecialCommandHandler {
     }
 
     public void onMessageUpdate(MessageUpdateEvent event) {
-        if (!lruCache.contains(event.getMessageId())) {
+        if (shouldNotProcessMessage(event.getMessage())) {
             return;
         }
-        processRequestMessage(event.getMessage(), event.getAuthor().getName());
+        lruCache.add(event.getMessageId());
+        event.getMessage().addReaction("▶").queue();
+        event.getMessage().getChannel().retrieveMessageById(event.getMessageIdLong()).queue(
+                (updatedMessage) -> {
+                    if (updatedMessage.getReactions().stream().anyMatch(messageReaction ->
+                            messageReaction.getReactionEmote().isEmoji()
+                                    && messageReaction.getReactionEmote().getEmoji().equals("▶")
+                                    && messageReaction.getCount() > 1
+                    )) {
+                        processRequestMessage(event.getMessage(), event.getAuthor().getName());
+                    }
+                }
+        );
     }
 
     public void onMessageReactionAdd(MessageReactionAddEvent event) {
@@ -84,7 +97,7 @@ public class CodeCompileHandler implements SpecialCommandHandler {
             }
             String code = matcher.group(2);
 
-            Emote loadingEmote = message.getJDA().getEmoteById(508808716376866826L);
+            Emote loadingEmote = message.getJDA().getEmoteById(LOADING_EMOTE_ID);
             if (loadingEmote != null) {
                 message.addReaction(loadingEmote).queue();
             }
@@ -108,7 +121,11 @@ public class CodeCompileHandler implements SpecialCommandHandler {
                 message.getChannel().retrieveMessageById(message.getIdLong()).queue(
                         (updatedMessage) ->
                                 updatedMessage.getReactions().forEach(messageReaction -> {
-                                    messageReaction.removeReaction().queue();
+                                    if (messageReaction.getReactionEmote().isEmote()
+                                            && messageReaction.getReactionEmote().getEmote().getIdLong() ==
+                                            LOADING_EMOTE_ID) {
+                                        messageReaction.removeReaction().queue();
+                                    }
                                 })
                 );
             });
