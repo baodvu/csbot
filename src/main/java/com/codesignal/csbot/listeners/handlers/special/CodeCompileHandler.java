@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,12 +109,14 @@ public class CodeCompileHandler implements SpecialCommandHandler {
                 if (result.getResult().get("verdict").asText().equals("OK")) {
                     eb.setColor(new Color(0x9CF434));
                     eb.setTitle("Output");
-                    eb.setDescription(String.format("```\n%s```", result.getResult().get("output").asText()));
+                    eb.setDescription(String.format("```\n%s```",
+                            StringUtils.abbreviate(result.getResult().get("output").asText(), 2040)));
                 } else {
                     eb.setColor(new Color(0xF45C37));
                     eb.setTitle(result.getResult().get("verdict").asText());
                     if (!result.getResult().get("compilationLog").asText().isEmpty()) {
-                        eb.setDescription("```\n" + result.getResult().get("compilationLog").asText() + "```");
+                        eb.setDescription(String.format("```\n%s```",
+                                StringUtils.abbreviate(result.getResult().get("compilationLog").asText(), 2040)));
                     }
                 }
                 eb.setFooter(String.format("Requested by %s | Runtime: %d ms", requester, runTime));
