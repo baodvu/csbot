@@ -12,9 +12,8 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 public class UndeleteCommandHandler extends AbstractCommandHandler {
@@ -27,10 +26,9 @@ public class UndeleteCommandHandler extends AbstractCommandHandler {
     public UndeleteCommandHandler() {
         ArgumentParser parser = this.buildArgParser();
 
-        parser.addArgument("-n", "--lines")
+        parser.addArgument("-n", "--messages")
                 .type(Integer.class)
-                .setDefault(200)
-                .help("display the last n lines");
+                .help("display the last n messages");
     }
 
     public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
@@ -43,17 +41,29 @@ public class UndeleteCommandHandler extends AbstractCommandHandler {
             return;
         }
         Namespace ns = this.parseArgs(event);
-        int lineCount = ns.getInt("lines");
+        Integer messageCount = ns.getInt("messages");
 
         TextChannel channel = event.getTextChannel();
-        channel.sendMessage("Here are the edited messages within the last hour:").queue();
+        channel.sendMessage(String.format("Here are %s edited messages within the last hour:",
+                messageCount == null ? "all" : messageCount.toString())).queue();
 
-        int message_count = 0;
         int character_count = 0;
 
         List<String> buffer = new ArrayList<>();
+        List<DiscordMessageVersioned> messages = storage.getEditedMessagesFromLastHour(event.getChannel().getIdLong());
 
-        for (DiscordMessageVersioned message : storage.getEditedMessagesFromLastHour(event.getChannel().getIdLong())) {
+        if (messageCount != null) {
+            Set<Long> selectedMessageIds = new HashSet<>();
+            for (int i = messages.size() - 1; i >= 0; i--) {
+                selectedMessageIds.add(messages.get(i).getMessageId());
+                if (selectedMessageIds.size() >= messageCount) break;
+            }
+            messages = messages.stream().filter(
+                    discordMessageVersioned -> selectedMessageIds.contains(discordMessageVersioned.getMessageId()))
+            .collect(Collectors.toList());
+        }
+
+        for (DiscordMessageVersioned message : messages) {
             User author = event.getJDA().getUserById(message.getAuthorId());
             long unix_timestamp = UUIDs.unixTimestamp(message.getCreatedAt());
 
@@ -73,13 +83,6 @@ public class UndeleteCommandHandler extends AbstractCommandHandler {
 
             buffer.add(s);
             character_count += s.length() + 2;
-            message_count++;
-
-            if (message_count >= lineCount) {
-                channel.sendMessage(String.join("\n", buffer)).queue();
-                buffer.clear();
-                break;
-            }
         }
 
         if (!buffer.isEmpty()) {
