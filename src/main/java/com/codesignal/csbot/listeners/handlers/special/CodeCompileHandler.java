@@ -63,10 +63,6 @@ public class CodeCompileHandler implements SpecialCommandHandler {
     }
 
     private void processRequestMessage(Message message, final String requester) {
-        Emote loadingEmote = message.getJDA().getEmoteById(508808716376866826L);
-        if (loadingEmote != null) {
-            message.addReaction(loadingEmote).queue();
-        }
         long authorId = message.getAuthor().getIdLong();
         if (!rateLimiters.containsKey(authorId)) {
             rateLimiters.put(authorId, RateLimiter.create(0.2));
@@ -88,6 +84,10 @@ public class CodeCompileHandler implements SpecialCommandHandler {
             }
             String code = matcher.group(2);
 
+            Emote loadingEmote = message.getJDA().getEmoteById(508808716376866826L);
+            if (loadingEmote != null) {
+                message.addReaction(loadingEmote).queue();
+            }
             CodesignalClient csClient = CodesignalClientSingleton.getInstance();
             csClient.send(new GetRunRawResultMessage(code, lang), (result) -> {
                 int runTime = result.getResult().get("runTime").asInt();
