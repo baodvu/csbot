@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.TextChannel;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringEscapeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,14 +125,14 @@ class ChallengeWatcher {
                                                     "https://app.codesignal.com/profile/" + author.get("username").textValue(),
                                                     author.get("avatar") != null ? author.get("avatar").textValue() : null);
                                             eb.setTitle(challenge.get("name").textValue());
-                                            eb.setDescription(parts[0].substring(0, Math.min(parts[0].length(), 2000)));
+                                            eb.setDescription(StringUtils.abbreviate(parts[0], 2048));
                                         } else if (headers[i - 1].toLowerCase().contains("example")) {
                                             eb.setTitle("Example");
                                         } else if (headers[i - 1].toLowerCase().contains("input")) {
                                             eb.setTitle("I/O");
                                         }
 
-                                        eb.setDescription(parts[i].substring(0, Math.min(parts[i].length(), 2000)));
+                                        eb.setDescription(StringUtils.abbreviate(parts[i], 2048));
                                         eb.setColor(color);
 
                                         if (i == parts.length - 1) {
