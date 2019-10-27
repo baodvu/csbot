@@ -232,7 +232,7 @@ public class MessageListener extends ListenerAdapter {
                         event.getMessageIdLong(),
                         com.datastax.driver.core.utils.UUIDs.timeBased(),
                         message.getAuthorId(),
-                        "[deleted]"
+                        "[DELETED]"
                 )
         );
     }

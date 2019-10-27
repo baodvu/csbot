@@ -32,7 +32,7 @@ public class UndeleteCommandHandler extends AbstractCommandHandler {
     }
 
     public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
-        if (event.getMember() == null || !event.getMember().hasPermission(Permission.ADMINISTRATOR)) {
+        if (event.getMember() == null) {
             // Only admins can do dis.
             event.getChannel().sendMessage(
                     String.format("As Confucius once said:\n> %s",
@@ -42,6 +42,10 @@ public class UndeleteCommandHandler extends AbstractCommandHandler {
         }
         Namespace ns = this.parseArgs(event);
         Integer messageCount = ns.getInt("messages");
+        if (!event.getMember().hasPermission(Permission.ADMINISTRATOR)) {
+            if (messageCount == null) messageCount = 2;
+            messageCount = Math.min(2, messageCount);
+        }
 
         TextChannel channel = event.getTextChannel();
         channel.sendMessage(String.format("Here are %s edited messages within the last hour:",
@@ -52,16 +56,21 @@ public class UndeleteCommandHandler extends AbstractCommandHandler {
         List<String> buffer = new ArrayList<>();
         List<DiscordMessageVersioned> messages = storage.getEditedMessagesFromLastHour(event.getChannel().getIdLong());
 
+        Set<Long> selectedMessageIds = new HashSet<>();
         if (messageCount != null) {
-            Set<Long> selectedMessageIds = new HashSet<>();
             for (int i = messages.size() - 1; i >= 0; i--) {
                 selectedMessageIds.add(messages.get(i).getMessageId());
                 if (selectedMessageIds.size() >= messageCount) break;
             }
             messages = messages.stream().filter(
-                    discordMessageVersioned -> selectedMessageIds.contains(discordMessageVersioned.getMessageId()))
+                    discordMessageVersioned -> selectedMessageIds.contains(discordMessageVersioned.getMessageId())
+                    && !discordMessageVersioned.getContent().equals("[deleted]"))
             .collect(Collectors.toList());
         }
+        messages = messages.stream().filter(
+                msg -> (selectedMessageIds.isEmpty() || selectedMessageIds.contains(msg.getMessageId()))
+                        && !msg.getContent().equals("[deleted]"))
+                .collect(Collectors.toList());
 
         for (DiscordMessageVersioned message : messages) {
             User author = event.getJDA().getUserById(message.getAuthorId());
