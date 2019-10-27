@@ -4,6 +4,7 @@ import com.codesignal.csbot.adapters.codesignal.CodesignalClient;
 import com.codesignal.csbot.adapters.codesignal.CodesignalClientSingleton;
 import com.codesignal.csbot.adapters.codesignal.message.taskService.GetRunRawResultMessage;
 import com.codesignal.csbot.utils.LanguageAbbreviation;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.util.concurrent.RateLimiter;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.Emote;
@@ -37,7 +38,7 @@ public class CodeCompileHandler implements SpecialCommandHandler {
             return true;
         }
 
-        return !message.getContentRaw().matches("(?s)```[^\\s]+.*```");
+        return !message.getContentRaw().matches("(?s)dev```[^\\s]+.*```");
     }
 
     public void onMessageReceived(MessageReceivedEvent event) {
@@ -86,7 +87,7 @@ public class CodeCompileHandler implements SpecialCommandHandler {
                     "Slow down buddy. Please wait 5 seconds between requests.").queue();
             return;
         }
-        Pattern pattern = Pattern.compile("```([^\\s]+)\n(.*)```", Pattern.DOTALL);
+        Pattern pattern = Pattern.compile("dev```([^\\s]+)\n(.*)```", Pattern.DOTALL);
         Matcher matcher = pattern.matcher(message.getContentRaw());
 
         if (matcher.find()) {
@@ -103,35 +104,42 @@ public class CodeCompileHandler implements SpecialCommandHandler {
                 message.addReaction(loadingEmote).queue();
             }
             CodesignalClient csClient = CodesignalClientSingleton.getInstance();
-            csClient.send(new GetRunRawResultMessage(code, lang), (result) -> {
-                int runTime = result.getResult().get("runTime").asInt();
-                EmbedBuilder eb = new EmbedBuilder();
-                if (result.getResult().get("verdict").asText().equals("OK")) {
-                    eb.setColor(new Color(0x9CF434));
-                    eb.setTitle("Output");
-                    eb.setDescription(String.format("```\n%s```",
-                            StringUtils.abbreviate(result.getResult().get("output").asText(), 2040)));
-                } else {
-                    eb.setColor(new Color(0xF45C37));
-                    eb.setTitle(result.getResult().get("verdict").asText());
-                    if (!result.getResult().get("compilationLog").asText().isEmpty()) {
-                        eb.setDescription(String.format("```\n%s```",
-                                StringUtils.abbreviate(result.getResult().get("compilationLog").asText(), 2040)));
+            for (int i=0; i<20; ++i) {
+                csClient.send(new GetRunRawResultMessage(code, lang), (result) -> {
+                    if (result.getError() != null) {
+                        message.getChannel().sendMessage(
+                                "Reimu can't handle your request at the moment :<").queue();
+                        throw new RuntimeException("Failed to get raw run result: " + result.getError().toString());
                     }
-                }
-                eb.setFooter(String.format("Requested by %s | Runtime: %d ms", requester, runTime));
-                message.getChannel().sendMessage(eb.build()).queue();
-                message.getChannel().retrieveMessageById(message.getIdLong()).queue(
-                        (updatedMessage) ->
-                                updatedMessage.getReactions().forEach(messageReaction -> {
-                                    if (messageReaction.getReactionEmote().isEmote()
-                                            && messageReaction.getReactionEmote().getEmote().getIdLong() ==
-                                            LOADING_EMOTE_ID) {
-                                        messageReaction.removeReaction().queue();
-                                    }
-                                })
-                );
-            });
+                    int runTime = result.getResult().get("runTime").asInt();
+                    EmbedBuilder eb = new EmbedBuilder();
+                    if (result.getResult().get("verdict").asText().equals("OK")) {
+                        eb.setColor(new Color(0x9CF434));
+                        eb.setTitle("Output");
+                        eb.setDescription(String.format("```\n%s```",
+                                StringUtils.abbreviate(result.getResult().get("output").asText(), 2040)));
+                    } else {
+                        eb.setColor(new Color(0xF45C37));
+                        eb.setTitle(result.getResult().get("verdict").asText());
+                        if (!result.getResult().get("compilationLog").asText().isEmpty()) {
+                            eb.setDescription(String.format("```\n%s```",
+                                    StringUtils.abbreviate(result.getResult().get("compilationLog").asText(), 2040)));
+                        }
+                    }
+                    eb.setFooter(String.format("Requested by %s | Runtime: %d ms", requester, runTime));
+                    message.getChannel().sendMessage(eb.build()).queue();
+                    message.getChannel().retrieveMessageById(message.getIdLong()).queue(
+                            (updatedMessage) ->
+                                    updatedMessage.getReactions().forEach(messageReaction -> {
+                                        if (messageReaction.getReactionEmote().isEmote()
+                                                && messageReaction.getReactionEmote().getEmote().getIdLong() ==
+                                                LOADING_EMOTE_ID) {
+                                            messageReaction.removeReaction().queue();
+                                        }
+                                    })
+                    );
+                });
+            }
         }
     }
 }
