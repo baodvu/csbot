@@ -123,21 +123,26 @@ public class CodeCompileHandler implements SpecialCommandHandler {
                 }
                 int runTime = result.getResult().get("runTime").asInt();
                 EmbedBuilder eb = new EmbedBuilder();
+                String description = "";
                 if (result.getResult().get("verdict").asText().equals("OK")) {
                     eb.setColor(new Color(0x9CF434));
                     eb.setTitle("Output");
-                    eb.setDescription(String.format("```\n%s```",
-                            StringUtils.abbreviate(result.getResult().get("output").asText(), 2040)));
+                    description = result.getResult().get("output").asText();
+                    eb.setDescription(String.format("```\n%s```", StringUtils.abbreviate(description, 2041)));
                 } else {
                     eb.setColor(new Color(0xF45C37));
                     eb.setTitle(result.getResult().get("verdict").asText());
-                    if (!result.getResult().get("compilationLog").asText().isEmpty()) {
+                    if (!result.getResult().get("compilationLog").asText().isEmpty())
+                        description = result.getResult().get("compilationLog").asText();{
                         eb.setDescription(String.format("```\n%s```",
-                                StringUtils.abbreviate(result.getResult().get("compilationLog").asText(), 2040)));
+                                StringUtils.abbreviate(description, 2041)));
                     }
                 }
                 eb.setFooter(String.format("Requested by %s | Runtime: %d ms", requester, runTime));
                 message.getChannel().sendMessage(eb.build()).queue();
+                if (description.length() > 2041) {
+                    message.getChannel().sendFile(description.getBytes(), "output.txt").queue();
+                }
                 message.getChannel().retrieveMessageById(message.getIdLong()).queue(
                         (updatedMessage) ->
                                 updatedMessage.getReactions().forEach(messageReaction -> {
