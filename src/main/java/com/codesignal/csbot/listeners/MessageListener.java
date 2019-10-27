@@ -1,13 +1,17 @@
 package com.codesignal.csbot.listeners;
 
 import com.codesignal.csbot.listeners.handlers.*;
+import com.codesignal.csbot.listeners.handlers.special.CodeCompileHandler;
+import com.codesignal.csbot.listeners.handlers.special.SpecialCommandHandler;
 import com.codesignal.csbot.models.DiscordMessage;
 import com.codesignal.csbot.models.DiscordMessageVersioned;
 import com.codesignal.csbot.storage.Storage;
 import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageDeleteEvent;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.MessageUpdateEvent;
+import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import org.apache.lucene.search.spell.PlainTextDictionary;
@@ -16,6 +20,7 @@ import org.apache.lucene.store.RAMDirectory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
@@ -38,12 +43,16 @@ public class MessageListener extends ListenerAdapter {
             new WolframAlphaHandler(),
             new YoutubeDownloadHandler()
     );
+    private static final CodeCompileHandler codeCompileHandler = new CodeCompileHandler();
     private static final Logger logger = LoggerFactory.getLogger(MessageListener.class);
     private final Storage storage = new Storage();
     private SpellChecker spellChecker;
     private final Map<String, CommandHandler> commandHandlerMap = new HashMap<>();
+    private final long REIMU_DM_CHANNEL = 637927984807804928L;
+    private final boolean isProd;
 
     public MessageListener() {
+        isProd = "prod".equals(System.getenv("ENV"));
         buildLuceneDictionary();
     }
 
@@ -77,42 +86,40 @@ public class MessageListener extends ListenerAdapter {
             return;
         }
 
-        if (event.isFromType(ChannelType.PRIVATE)) {
-            // Ignores private messages.
-            logger.info("[PM] {}: {}",
-                    event.getAuthor().getName(),
-                    event.getMessage().getContentDisplay());
-        } else {
-            // Saves message into the database.
-            String content = event.getMessage().getContentDisplay();
+        // Saves message into the database.
+        String content = event.getMessage().getContentDisplay();
 
-            if (!event.getMessage().getAttachments().isEmpty()) {
-                content += "\n" + event.getMessage().getAttachments().stream().map(
-                        att -> "Attachment: " + att.getUrl()
-                ).collect(Collectors.joining("\n"));
-            }
-
-            logger.info("[{}][{}] {}: {}",
-                    event.getGuild().getName(),
-                    event.getTextChannel().getName(),
-                    event.getMember() != null ? event.getMember().getEffectiveName() : "",
-                    content);
-
-            storage.saveMessage(
-                    new DiscordMessage(
-                            event.getChannel().getIdLong(),
-                            event.getMessageIdLong(),
-                            com.datastax.driver.core.utils.UUIDs.timeBased(),
-                            event.getAuthor().getIdLong(),
-                            content
-                    )
-            );
+        if (!event.getMessage().getAttachments().isEmpty()) {
+            content += "\n" + event.getMessage().getAttachments().stream().map(
+                    att -> "Attachment: " + att.getUrl()
+            ).collect(Collectors.joining("\n"));
         }
+
+        String logMessage = String.format("[%s] %s: %s",
+                event.getChannel().getName(),
+                event.getAuthor().getName(),
+                content);
+        if (isProd && event.getChannelType().equals(ChannelType.PRIVATE)) {
+            TextChannel logChannel = event.getJDA().getTextChannelById(REIMU_DM_CHANNEL);
+            if (logChannel != null) logChannel.sendMessage(logMessage).queue();
+        }
+        logger.info(logMessage);
+
+        storage.saveMessage(
+                new DiscordMessage(
+                        event.getChannel().getIdLong(),
+                        event.getMessageIdLong(),
+                        com.datastax.driver.core.utils.UUIDs.timeBased(),
+                        event.getAuthor().getIdLong(),
+                        content
+                )
+        );
 
         // If this is a command for the bot, indicated by COMMAND_PREFIX, then pass it over to the
         // appropriate handler, using lucene approximate matching if needed.
         String message = event.getMessage().getContentRaw();
-        if (message.startsWith(COMMAND_PREFIX)) {
+        boolean shouldHandle = event.getAuthor().getIdLong() == 165451189041758209L || event.getChannelType().isGuild();
+        if (shouldHandle && message.startsWith(COMMAND_PREFIX)) {
             StringTokenizer tokens = new StringTokenizer(message.substring(COMMAND_PREFIX.length()));
 
             if (tokens.countTokens() > 0) {
@@ -132,6 +139,7 @@ public class MessageListener extends ListenerAdapter {
                     if (command != null) {
                         try {
                             commandHandlerMap.get(command).onMessageReceived(event);
+                            return;
                         } catch (ArgumentParserException exp) {
                             // Since we already printed out the error to discord, do nothing here.
                         }
@@ -141,6 +149,8 @@ public class MessageListener extends ListenerAdapter {
                 }
             }
         }
+
+        codeCompileHandler.onMessageReceived(event);
     }
 
     @Override
@@ -153,9 +163,6 @@ public class MessageListener extends ListenerAdapter {
                 event.getChannel().getIdLong(),
                 event.getMessageIdLong()
         );
-
-        // If message is of a bot, then it will be null since we don't store bot messages.
-        if (message == null) return;
 
         storage.saveVersionedMessage(
                 new DiscordMessageVersioned(
@@ -175,10 +182,15 @@ public class MessageListener extends ListenerAdapter {
             ).collect(Collectors.joining("\n"));
         }
 
-        logger.info("[update] message_id: {} | message: {} | channel: {}",
-                event.getMessageId(),
-                event.getMessage(),
-                event.getChannel());
+        String logMessage = String.format("[update][%s] %s: %s",
+                event.getChannel().getName(),
+                event.getAuthor().getName(),
+                event.getMessage());
+        if (isProd && event.getChannelType().equals(ChannelType.PRIVATE)) {
+            TextChannel logChannel = event.getJDA().getTextChannelById(REIMU_DM_CHANNEL);
+            if (logChannel != null) logChannel.sendMessage(logMessage).queue();
+        }
+        logger.info(logMessage);
 
         storage.saveVersionedMessage(
                 new DiscordMessageVersioned(
@@ -189,6 +201,8 @@ public class MessageListener extends ListenerAdapter {
                         content
                 )
         );
+
+        codeCompileHandler.onMessageUpdate(event);
     }
 
     @Override
@@ -201,9 +215,6 @@ public class MessageListener extends ListenerAdapter {
                 event.getChannel().getIdLong(),
                 event.getMessageIdLong()
         );
-
-        // If message is of a bot, then it will be null since we don't store bot messages.
-        if (message == null) return;
 
         storage.saveVersionedMessage(
                 new DiscordMessageVersioned(
@@ -224,5 +235,10 @@ public class MessageListener extends ListenerAdapter {
                         "[deleted]"
                 )
         );
+    }
+
+    @Override
+    public void onMessageReactionAdd(@Nonnull MessageReactionAddEvent event) {
+        codeCompileHandler.onMessageReactionAdd(event);
     }
 }
