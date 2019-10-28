@@ -63,13 +63,12 @@ public class UndeleteCommandHandler extends AbstractCommandHandler {
                 if (selectedMessageIds.size() >= messageCount) break;
             }
             messages = messages.stream().filter(
-                    discordMessageVersioned -> selectedMessageIds.contains(discordMessageVersioned.getMessageId())
-                    && !discordMessageVersioned.getContent().equals("[deleted]"))
+                    discordMessageVersioned -> selectedMessageIds.contains(discordMessageVersioned.getMessageId()))
             .collect(Collectors.toList());
         }
         messages = messages.stream().filter(
                 msg -> (selectedMessageIds.isEmpty() || selectedMessageIds.contains(msg.getMessageId()))
-                        && !msg.getContent().equals("[deleted]"))
+                        && !msg.getContent().equals("[DELETED]"))
                 .collect(Collectors.toList());
 
         for (DiscordMessageVersioned message : messages) {
