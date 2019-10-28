@@ -76,7 +76,7 @@ public class GetHiddenTestsHandler extends CodeSignalCommandHandler {
         Namespace ns = this.parseArgs(event);
 
         final String challengeId;
-        if (ns.getString("challenge-id") == null) {
+        if (ns.getString("challenge_id") == null) {
             try {
                 challengeId = getDailyChallengeId().get();
             } catch (InterruptedException | ExecutionException e) {
@@ -84,7 +84,7 @@ public class GetHiddenTestsHandler extends CodeSignalCommandHandler {
                 return;
             }
         } else {
-            challengeId = ns.getString("challenge-id");
+            challengeId = ns.getString("challenge_id");
         }
         int testNumber = ns.getInt("test_number");
         int batchSize = ns.getInt("batch_size");
