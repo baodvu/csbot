@@ -10,7 +10,8 @@ public class GetRunRawResultMessage extends MethodMessage {
         super("taskService.getRunRawResult",
                 List.of(
                         Map.of(
-                                "taskId", "kFfQCuBZvLWq9tpNS",  // prisonerEscape is allotted a lot more time.
+//                                "taskId", "kFfQCuBZvLWq9tpNS",  // prisonerEscape is allotted a lot more time.
+                                "taskId", "or5YcT9sCBNYhgm2t",  // an API challenge with internet capability
                                 "submission", Map.of(
                                         "sources", List.of(
                                                 Map.of(
