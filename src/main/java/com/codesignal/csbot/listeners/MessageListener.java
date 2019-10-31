@@ -1,6 +1,7 @@
 package com.codesignal.csbot.listeners;
 
 import com.codesignal.csbot.listeners.handlers.*;
+import com.codesignal.csbot.listeners.handlers.music.PlayCommandHandler;
 import com.codesignal.csbot.listeners.handlers.special.CodeCompileHandler;
 import com.codesignal.csbot.listeners.handlers.special.SpecialCommandHandler;
 import com.codesignal.csbot.models.DiscordMessage;
@@ -37,6 +38,7 @@ public class MessageListener extends ListenerAdapter {
             new GetLanguageVersionHandler(),
             new GetTopSubHandler(),
             new PingCommandHandler(),
+            new PlayCommandHandler(),
             new SayHandler(),
             new SendMethodMessageHandler(),
             new UndeleteCommandHandler(),

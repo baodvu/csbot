@@ -37,10 +37,10 @@ class HelpArgumentAction implements ArgumentAction {
 }
 
 
-abstract class AbstractCommandHandler implements CommandHandler {
+public abstract class AbstractCommandHandler implements CommandHandler {
     private ArgumentParser parser;
 
-    ArgumentParser buildArgParser() {
+    public ArgumentParser buildArgParser() {
         parser = ArgumentParsers.newArgumentParser(this.getNames().get(0), false)
                 .defaultHelp(true)
                 .description(this.getShortDescription());
@@ -55,7 +55,7 @@ abstract class AbstractCommandHandler implements CommandHandler {
         return parser;
     }
 
-    Namespace parseArgs(MessageReceivedEvent event) throws ArgumentParserException {
+    public Namespace parseArgs(MessageReceivedEvent event) throws ArgumentParserException {
         String receivedCommand = event.getMessage().getContentRaw();
         List<String> tokens = new ArrayList<>();
         StringTokenizer tokenizer = new StringTokenizer(receivedCommand, " ");
