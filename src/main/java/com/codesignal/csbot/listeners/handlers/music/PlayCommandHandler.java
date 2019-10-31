@@ -74,7 +74,10 @@ public class PlayCommandHandler extends AbstractCommandHandler {
         }
 
         if (!manager.isConnected()) {
+            event.getChannel().sendMessage("open AC").queue();
             manager.openAudioConnection(voiceChannel);
+        } else {
+            event.getChannel().sendMessage("not open AC").queue();
         }
         playerManager.loadItemOrdered(guild.getId(), trackUrl, new AudioLoadResultHandler() {
             @Override
@@ -110,9 +113,15 @@ public class PlayCommandHandler extends AbstractCommandHandler {
     }
 
     private String querySong(String title) throws UnirestException {
-        JsonNode resp = Unirest.get(
+        JsonNode resp = Unirest
+                .get(
                 "https://script.google.com/macros/s/AKfycbwR5eAczqX9ZxTX7Jd0iCRj38ZPXTO3Rf0eSD-mickeVmnyphc/exec")
-                .field("title", title).asJson().getBody();
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_5) AppleWebKit/537.36 (KHTML, " +
+                        "like Gecko) Chrome/75.0.3770.100 Safari/537.36")
+                .queryString("title", title)
+                .asJson().getBody();
         JSONArray files = resp.getObject().getJSONArray("files");
         return files.isEmpty() ? null : files.getJSONObject(0).getString("id");
     }

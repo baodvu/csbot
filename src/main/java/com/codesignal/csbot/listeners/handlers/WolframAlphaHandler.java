@@ -30,8 +30,8 @@ public class WolframAlphaHandler extends AbstractCommandHandler {
         try {
             String response = Unirest
                 .get("http://api.wolframalpha.com/v1/result")
-                .field("appid", WA_APP_ID)
-                .field("i", query).asString().getBody();
+                .queryString("appid", WA_APP_ID)
+                .queryString("i", query).asString().getBody();
 
             while (!response.isEmpty()) {
                 int end = Math.min(2000, response.length());
@@ -47,8 +47,8 @@ public class WolframAlphaHandler extends AbstractCommandHandler {
         try {
             InputStream responseStream = Unirest
                     .get("http://api.wolframalpha.com/v1/simple")
-                    .field("appid", WA_APP_ID)
-                    .field("i", query).asBinary().getRawBody();
+                    .queryString("appid", WA_APP_ID)
+                    .queryString("i", query).asBinary().getRawBody();
             event.getTextChannel().sendFile(responseStream, "response.gif").queue();
         } catch (UnirestException e) {
             event.getTextChannel().sendMessage("Can't parse image response").queue();
