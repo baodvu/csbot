@@ -23,30 +23,37 @@ import org.json.JSONArray;
 import java.util.List;
 
 public class PlayCommandHandler extends AbstractCommandHandler {
-    private static final List<String> names = List.of("play");
+    private static final List<String> names = List.of("play", "skip");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Tell the bot to say something."; }
 
     private final AudioPlayerManager playerManager = AudioPlayerManagerFactory.getInstance();
+    private AudioPlayer player;
+    private TrackScheduler scheduler;
 
     public PlayCommandHandler() {
         ArgumentParser parser = this.buildArgParser();
         parser.addArgument("song").nargs("*")
                 .help("URL or song name");
+        player = playerManager.createPlayer();
+        scheduler = new TrackScheduler(player);
+        player.addListener(scheduler);
     }
 
     public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
+        if (event.getMessage().getContentRaw().split(" ")[0].endsWith("skip")) {
+            scheduler.nextTrack();
+            return;
+        }
         Namespace ns = this.parseArgs(event);
         String song = String.join(" ", ns.getList("song"));
         MessageChannel channel = event.getChannel();
 
         Guild guild = event.getGuild();
-        // This will get the first voice channel with the name "music"
-        // matching by voiceChannel.getName().equalsIgnoreCase("music")
-        VoiceChannel voiceChannel = guild.getVoiceChannelById(391833971488456704L);
         AudioManager manager = guild.getAudioManager();
-        AudioPlayer player = playerManager.createPlayer();
+        manager.setSendingHandler(new DriveAudioSendHandler(player));
+        VoiceChannel voiceChannel = guild.getVoiceChannelById(391833971488456704L);
 
         final String trackUrl;
         if (song.startsWith("http")) {
@@ -66,10 +73,9 @@ public class PlayCommandHandler extends AbstractCommandHandler {
             }
         }
 
-        TrackScheduler scheduler = new TrackScheduler(player);
-        player.addListener(scheduler);
-        manager.setSendingHandler(new DriveAudioSendHandler(player));
-        manager.openAudioConnection(voiceChannel);
+        if (!manager.isConnected()) {
+            manager.openAudioConnection(voiceChannel);
+        }
         playerManager.loadItemOrdered(guild.getId(), trackUrl, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {

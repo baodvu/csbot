@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 @SuppressWarnings("UnstableApiUsage")  // It's been @Beta for 8 years (since 2011).
 public class CodeCompileHandler implements SpecialCommandHandler {
+    private static final String COMMAND_PREFIX = System.getenv("COMMAND_PREFIX");
     private static final Logger log = LoggerFactory.getLogger(CodeCompileHandler.class);
     private static final long LOADING_EMOTE_ID = 508808716376866826L;
 
@@ -40,8 +41,9 @@ public class CodeCompileHandler implements SpecialCommandHandler {
             PATTERN = "(?s)```[^\\s]+.*```";
             PATTERN_WITH_CAPTURE_GROUPS = Pattern.compile("```([^\\s]+)\n(.*)```", Pattern.DOTALL);
         } else {
-            PATTERN = "(?s)!```[^\\s]+.*```";
-            PATTERN_WITH_CAPTURE_GROUPS = Pattern.compile("!```([^\\s]+)\n(.*)```", Pattern.DOTALL);
+
+            PATTERN = "(?s)" + COMMAND_PREFIX + "```[^\\s]+.*```";
+            PATTERN_WITH_CAPTURE_GROUPS = Pattern.compile(COMMAND_PREFIX + "```([^\\s]+)\n(.*)```", Pattern.DOTALL);
         }
     }
 
