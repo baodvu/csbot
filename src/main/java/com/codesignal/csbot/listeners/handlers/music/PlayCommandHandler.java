@@ -1,6 +1,7 @@
 package com.codesignal.csbot.listeners.handlers.music;
 
 import com.codesignal.csbot.listeners.handlers.AbstractCommandHandler;
+import com.google.api.client.json.Json;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
@@ -19,10 +20,12 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.util.List;
 
 public class PlayCommandHandler extends AbstractCommandHandler {
+    private static final String GOOGLE_API_KEY = System.getenv("GOOGLE_API_KEY");
     private static final List<String> names = List.of("play", "skip");
 
     public List<String> getNames() { return names; }
@@ -55,34 +58,37 @@ public class PlayCommandHandler extends AbstractCommandHandler {
         manager.setSendingHandler(new DriveAudioSendHandler(player));
         VoiceChannel voiceChannel = guild.getVoiceChannelById(391833971488456704L);
 
+        JSONObject file = null;
         final String trackUrl;
         if (song.startsWith("http")) {
             trackUrl = song;
         } else {
-            String songId;
             try {
-                songId = querySong(song);
+                file = querySong(song);
             } catch (Exception e) {
                 event.getChannel().sendMessage("Error: " + e.getMessage()).queue();
                 return;
             }
-            if (songId != null) trackUrl = "https://drive.google.com/uc?id=" + songId;
+            if (file != null) {
+                trackUrl = String.format(
+                        "https://www.googleapis.com/drive/v3/files/%s?alt=media&key=%s",
+                        file.getString("id"), GOOGLE_API_KEY);
+            }
             else {
                 event.getChannel().sendMessage("No songs found").queue();
                 return;
             }
         }
+        final String songTitle = file == null ? null : file.getString("name");
 
         if (!manager.isConnected()) {
-            event.getChannel().sendMessage("open AC").queue();
             manager.openAudioConnection(voiceChannel);
-        } else {
-            event.getChannel().sendMessage("not open AC").queue();
         }
         playerManager.loadItemOrdered(guild.getId(), trackUrl, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
-                channel.sendMessage("Adding to queue " + track.getInfo().title).queue();
+                String title = songTitle != null ? songTitle : track.getInfo().title;
+                channel.sendMessage("Adding to queue " + title).queue();
                 scheduler.queue(track);
             }
 
@@ -94,8 +100,9 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                     firstTrack = playlist.getTracks().get(0);
                 }
 
+                String title = songTitle != null ? songTitle : firstTrack.getInfo().title;
                 channel.sendMessage(
-                        "Adding to queue " + firstTrack.getInfo().title
+                        "Adding to queue " + title
                                 + " (first track of playlist " + playlist.getName() + ")").queue();
                 scheduler.queue(firstTrack);
             }
@@ -112,7 +119,7 @@ public class PlayCommandHandler extends AbstractCommandHandler {
         });
     }
 
-    private String querySong(String title) throws UnirestException {
+    private JSONObject querySong(String title) throws UnirestException {
         JsonNode resp = Unirest
                 .get(
                 "https://script.google.com/macros/s/AKfycbwR5eAczqX9ZxTX7Jd0iCRj38ZPXTO3Rf0eSD-mickeVmnyphc/exec")
@@ -123,6 +130,6 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                 .queryString("title", title)
                 .asJson().getBody();
         JSONArray files = resp.getObject().getJSONArray("files");
-        return files.isEmpty() ? null : files.getJSONObject(0).getString("id");
+        return files.isEmpty() ? null : files.getJSONObject(0);
     }
 }
