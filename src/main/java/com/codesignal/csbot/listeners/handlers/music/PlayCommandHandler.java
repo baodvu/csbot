@@ -21,8 +21,10 @@ import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.data.util.Pair;
 
 import java.util.List;
+import java.util.concurrent.Callable;
 
 public class PlayCommandHandler extends AbstractCommandHandler {
     private static final String GOOGLE_API_KEY = System.getenv("GOOGLE_API_KEY");
@@ -89,22 +91,21 @@ public class PlayCommandHandler extends AbstractCommandHandler {
             public void trackLoaded(AudioTrack track) {
                 String title = songTitle != null ? songTitle : track.getInfo().title;
                 channel.sendMessage("Adding to queue " + title).queue();
-                scheduler.queue(track);
+                scheduler.queue(track, () -> {
+                    channel.sendMessage("Playing " + title).queue();
+                    return null;
+                });
             }
 
             @Override
             public void playlistLoaded(AudioPlaylist playlist) {
-                AudioTrack firstTrack = playlist.getSelectedTrack();
-
-                if (firstTrack == null) {
-                    firstTrack = playlist.getTracks().get(0);
+                channel.sendMessage("Found " + playlist.getTracks().size() + " tracks").queue();
+                for (AudioTrack track: playlist.getTracks()) {
+                    scheduler.queue(track, () -> {
+                        channel.sendMessage("Playing " + track.getInfo().title).queue();
+                        return null;
+                    });
                 }
-
-                String title = songTitle != null ? songTitle : firstTrack.getInfo().title;
-                channel.sendMessage(
-                        "Adding to queue " + title
-                                + " (first track of playlist " + playlist.getName() + ")").queue();
-                scheduler.queue(firstTrack);
             }
 
             @Override
