@@ -5,6 +5,7 @@ import com.codesignal.csbot.adapters.codesignal.CodesignalClientSingleton;
 import com.codesignal.csbot.adapters.codesignal.message.Message;
 import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
 import com.codesignal.csbot.adapters.codesignal.message.taskleaderboardservice.GetSubmissionMessage;
+import com.codesignal.csbot.listeners.BotCommand;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -75,7 +76,7 @@ public class GetTopSubHandler extends CodeSignalCommandHandler {
                 .help("Challenge ID").required(false);
     }
 
-    public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException{
+    public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand) throws ArgumentParserException{
         Namespace ns = this.parseArgs(event);
 
         final String challengeId;

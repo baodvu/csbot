@@ -1,5 +1,6 @@
 package com.codesignal.csbot.listeners.handlers;
 
+import com.codesignal.csbot.listeners.BotCommand;
 import com.codesignal.csbot.utils.Randomizer;
 import com.codesignal.csbot.utils.StreamGobbler;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -34,7 +35,7 @@ public class YoutubeDownloadHandler extends AbstractCommandHandler {
                 .help("Link to a page that contains a video you want to download");
     }
 
-    public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
+    public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand) throws ArgumentParserException {
         Namespace ns = this.parseArgs(event);
 
         String videoUrl = ns.getString("link");

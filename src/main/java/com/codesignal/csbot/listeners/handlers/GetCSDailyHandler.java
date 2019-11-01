@@ -5,6 +5,7 @@ import com.codesignal.csbot.adapters.codesignal.CodesignalClientSingleton;
 import com.codesignal.csbot.adapters.codesignal.message.GetUserFeedMessage;
 import com.codesignal.csbot.adapters.codesignal.message.Message;
 import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
+import com.codesignal.csbot.listeners.BotCommand;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -28,7 +29,7 @@ public class GetCSDailyHandler extends AbstractCommandHandler {
         this.buildArgParser();
     }
 
-    public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
+    public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand) throws ArgumentParserException {
         this.parseArgs(event);
         CodesignalClient csClient = CodesignalClientSingleton.getInstance();
 

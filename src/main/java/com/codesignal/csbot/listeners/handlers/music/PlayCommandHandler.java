@@ -1,7 +1,7 @@
 package com.codesignal.csbot.listeners.handlers.music;
 
+import com.codesignal.csbot.listeners.BotCommand;
 import com.codesignal.csbot.listeners.handlers.AbstractCommandHandler;
-import com.google.api.client.json.Json;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
@@ -21,10 +21,8 @@ import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.data.util.Pair;
 
 import java.util.List;
-import java.util.concurrent.Callable;
 
 public class PlayCommandHandler extends AbstractCommandHandler {
     private static final String GOOGLE_API_KEY = System.getenv("GOOGLE_API_KEY");
@@ -46,8 +44,8 @@ public class PlayCommandHandler extends AbstractCommandHandler {
         player.addListener(scheduler);
     }
 
-    public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
-        if (event.getMessage().getContentRaw().split(" ")[0].endsWith("skip")) {
+    public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand) throws ArgumentParserException {
+        if (botCommand.getCommandName().equals("skip")) {
             scheduler.nextTrack();
             return;
         }

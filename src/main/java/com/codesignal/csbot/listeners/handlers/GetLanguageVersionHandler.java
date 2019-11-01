@@ -4,6 +4,7 @@ import com.codesignal.csbot.adapters.codesignal.CodesignalClient;
 import com.codesignal.csbot.adapters.codesignal.CodesignalClientSingleton;
 import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
 import com.codesignal.csbot.adapters.codesignal.message.taskService.GetRunResultMessage;
+import com.codesignal.csbot.listeners.BotCommand;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -11,8 +12,6 @@ import net.sourceforge.argparse4j.inf.ArgumentParser;
 import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.io.IOException;
@@ -43,7 +42,7 @@ public class GetLanguageVersionHandler extends AbstractCommandHandler {
                 .help("Specify the programming language").required(true);
     }
 
-    public void onMessageReceived(MessageReceivedEvent event)
+    public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand)
             throws ArgumentParserException {
         Namespace ns = this.parseArgs(event);
         String language = ns.getString("lang");

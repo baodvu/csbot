@@ -4,6 +4,7 @@ import com.codesignal.csbot.adapters.codesignal.CodesignalClient;
 import com.codesignal.csbot.adapters.codesignal.CodesignalClientSingleton;
 import com.codesignal.csbot.adapters.codesignal.message.MethodMessage;
 import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
+import com.codesignal.csbot.listeners.BotCommand;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,7 +35,7 @@ public class SendMethodMessageHandler extends AbstractCommandHandler{
                 .help("Parameters");
     }
 
-    public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
+    public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand) throws ArgumentParserException {
         if (!event.getAuthor().getName().equals("ephemeraldream")
                 && (event.getMember() == null
                 || !event.getMember().hasPermission(Permission.ADMINISTRATOR))) {

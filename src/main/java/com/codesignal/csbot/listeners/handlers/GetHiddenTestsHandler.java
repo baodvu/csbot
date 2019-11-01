@@ -6,6 +6,7 @@ import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
 import com.codesignal.csbot.adapters.codesignal.message.SubmitTaskAnswerMessage;
 import com.codesignal.csbot.adapters.codesignal.message.challengeservice.GetDetailsMessage;
 import com.codesignal.csbot.adapters.codesignal.message.task.GetSampleTestsMessage;
+import com.codesignal.csbot.listeners.BotCommand;
 import com.codesignal.csbot.utils.Confucius;
 import com.codesignal.csbot.wss.CSWebSocket;
 import com.codesignal.csbot.wss.CSWebSocketImpl;
@@ -64,7 +65,7 @@ public class GetHiddenTestsHandler extends CodeSignalCommandHandler {
                 .help("A delay (in seconds) is needed as CodeSignal rate-limits");
     }
 
-    public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
+    public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand) throws ArgumentParserException {
         if (event.getMember() == null || !event.getMember().hasPermission(Permission.ADMINISTRATOR)) {
             // Only admins can do dis.
             event.getChannel().sendMessage(

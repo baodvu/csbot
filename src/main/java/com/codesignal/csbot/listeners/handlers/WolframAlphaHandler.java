@@ -1,5 +1,6 @@
 package com.codesignal.csbot.listeners.handlers;
 
+import com.codesignal.csbot.listeners.BotCommand;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -23,7 +24,7 @@ public class WolframAlphaHandler extends AbstractCommandHandler {
                 .help("the query expression to send to WA");
     }
 
-    public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
+    public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand) throws ArgumentParserException {
         Namespace ns = this.parseArgs(event);
         String query = String.join(" ", ns.getList("query"));
 

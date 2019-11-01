@@ -1,5 +1,6 @@
 package com.codesignal.csbot.listeners.handlers;
 
+import com.codesignal.csbot.listeners.BotCommand;
 import com.codesignal.csbot.models.DiscordMessageVersioned;
 import com.codesignal.csbot.storage.Storage;
 import com.codesignal.csbot.utils.Confucius;
@@ -31,7 +32,7 @@ public class UndeleteCommandHandler extends AbstractCommandHandler {
                 .help("display the last n messages");
     }
 
-    public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
+    public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand) throws ArgumentParserException {
         if (event.getMember() == null) {
             // Only admins can do dis.
             event.getChannel().sendMessage(

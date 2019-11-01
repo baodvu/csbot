@@ -1,5 +1,6 @@
 package com.codesignal.csbot.listeners.handlers;
 
+import com.codesignal.csbot.listeners.BotCommand;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
@@ -24,7 +25,7 @@ public class SayHandler extends AbstractCommandHandler{
                 .help("What you want the bot to say");
     }
 
-    public void onMessageReceived(MessageReceivedEvent event) throws ArgumentParserException {
+    public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand) throws ArgumentParserException {
         if (event.getMember() == null || !event.getMember().hasPermission(Permission.ADMINISTRATOR)) {
             // Only admins can do dis.
             return;

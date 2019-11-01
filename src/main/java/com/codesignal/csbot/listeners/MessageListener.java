@@ -122,10 +122,12 @@ public class MessageListener extends ListenerAdapter {
         String message = event.getMessage().getContentRaw();
         boolean shouldHandle = event.getAuthor().getIdLong() == 165451189041758209L || event.getChannelType().isGuild();
         if (shouldHandle && message.startsWith(COMMAND_PREFIX)) {
-            StringTokenizer tokens = new StringTokenizer(message.substring(COMMAND_PREFIX.length()));
+            final String coreMessage = message.substring(COMMAND_PREFIX.length());
+            StringTokenizer tokens = new StringTokenizer(coreMessage);
 
             if (tokens.countTokens() > 0) {
                 String command = tokens.nextToken();
+                String params = coreMessage.substring(command.length()).strip();
                 try {
                     if (!commandHandlerMap.containsKey(command)) {
                         String[] similarCommands = spellChecker.suggestSimilar(command, 1);
@@ -140,7 +142,8 @@ public class MessageListener extends ListenerAdapter {
                     }
                     if (command != null) {
                         try {
-                            commandHandlerMap.get(command).onMessageReceived(event);
+                            commandHandlerMap.get(command).onMessageReceived(
+                                    event, new BotCommand().withCommandName(command).withCommandParams(params));
                             return;
                         } catch (ArgumentParserException exp) {
                             // Since we already printed out the error to discord, do nothing here.
