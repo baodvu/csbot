@@ -24,6 +24,7 @@ public class Storage {
 
     public Storage() {
         String CONTACT_POINTS = System.getenv("CASSANDRA_CONTACT_POINTS");
+
         Cluster cluster = Cluster.builder().addContactPoints(CONTACT_POINTS).build();
         Session session = cluster.connect("codesignal");
 

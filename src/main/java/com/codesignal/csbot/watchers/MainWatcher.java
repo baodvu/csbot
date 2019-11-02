@@ -20,9 +20,17 @@ public class MainWatcher {
 //                TimeUnit.MINUTES.toSeconds(1),
 //                TimeUnit.SECONDS);
 
+        TorrentWatcher torrentWatcher = new TorrentWatcher();
+        Executors.newScheduledThreadPool(1).scheduleAtFixedRate(
+                () -> torrentWatcher.run(discordClient),
+                0,
+                TimeUnit.MINUTES.toSeconds(1),
+                TimeUnit.SECONDS);
+
         ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
 
         boolean isProd = "prod".equals(System.getenv("ENV"));
+
         ChallengeWatcher officialChallengeWatcher = new ChallengeWatcher(
                 "all", new Color(0xfebe1e), isProd ? "<@&493536203447074826>" : "<tag_removed>");
         service.scheduleAtFixedRate(

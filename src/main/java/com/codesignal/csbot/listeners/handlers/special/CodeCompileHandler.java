@@ -26,8 +26,8 @@ public class CodeCompileHandler implements SpecialCommandHandler {
     private static final Logger log = LoggerFactory.getLogger(CodeCompileHandler.class);
     private static final long LOADING_EMOTE_ID = 508808716376866826L;
 
-    private static Map<Long, RateLimiter> rateLimiters = new HashMap<>();
-    private static Set<String> lruCache = Collections.newSetFromMap(new LinkedHashMap<>(){
+    private static final Map<Long, RateLimiter> rateLimiters = new HashMap<>();
+    private static final Set<String> lruCache = Collections.newSetFromMap(new LinkedHashMap<>(){
         protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
             return size() > 100;
         }

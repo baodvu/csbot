@@ -11,8 +11,6 @@ import java.util.UUID;
 
 @Table(value = "discord_message_versioned")
 public class DiscordMessageVersioned implements Serializable {
-    @PrimaryKeyColumn(name = "channel_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
-    private final long channelId;
 
     @PrimaryKeyColumn(name = "created_at", ordinal = 1, type = PrimaryKeyType.CLUSTERED)
     private final UUID createdAt;
@@ -26,7 +24,6 @@ public class DiscordMessageVersioned implements Serializable {
     private final String content;
 
     public DiscordMessageVersioned(long channelId, long messageId, UUID createdAt, long authorId, String content) {
-        this.channelId = channelId;
         this.createdAt = createdAt;
         this.messageId = messageId;
         this.authorId = authorId;

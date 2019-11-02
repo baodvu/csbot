@@ -32,8 +32,8 @@ public class PlayCommandHandler extends AbstractCommandHandler {
     public String getShortDescription() { return "Tell the bot to say something."; }
 
     private final AudioPlayerManager playerManager = AudioPlayerManagerFactory.getInstance();
-    private AudioPlayer player;
-    private TrackScheduler scheduler;
+    private final AudioPlayer player;
+    private final TrackScheduler scheduler;
 
     public PlayCommandHandler() {
         ArgumentParser parser = this.buildArgParser();

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 public class LanguageAbbreviation {
-    private static List<String> rawLanguageList = List.of(
+    private static final List<String> rawLanguageList = List.of(
             "clj clojure",
             "coffee coffeescript",
             "lisp",
@@ -45,7 +45,7 @@ public class LanguageAbbreviation {
             "ts typescript",
             "vb visualbasic");
 
-    private static Map<String, String> toStandardized;
+    private static final Map<String, String> toStandardized;
     static {
         toStandardized = new HashMap<>();
         for (String rawString: rawLanguageList) {

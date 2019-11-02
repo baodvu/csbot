@@ -33,6 +33,7 @@ import java.util.stream.Collectors;
 public class MessageListener extends ListenerAdapter {
     private static final String COMMAND_PREFIX = System.getenv("COMMAND_PREFIX");
     private static final List<CommandHandler> COMMAND_HANDLERS = List.of(
+            new AddSeriesTracker(),
             new GetCSDailyHandler(),
             new GetHiddenTestsHandler(),
             new GetLanguageVersionHandler(),
@@ -220,6 +221,8 @@ public class MessageListener extends ListenerAdapter {
                 event.getChannel().getIdLong(),
                 event.getMessageIdLong()
         );
+
+        if (message == null) return;
 
         storage.saveVersionedMessage(
                 new DiscordMessageVersioned(
