@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static net.sourceforge.argparse4j.impl.Arguments.storeTrue;
+
 
 public class AddSeriesTracker extends AbstractCommandHandler{
     private static final List<String> names = List.of("track");
@@ -37,35 +39,38 @@ public class AddSeriesTracker extends AbstractCommandHandler{
         parser.addArgument("-s", "--source")
                 .type(String.class)
                 .help("Preferred source");
-        parser.addArgument("--min_age")
+        parser.addArgument("--dry-run")
+                .action(storeTrue())
+                .help("Minimum age in seconds");
+        parser.addArgument("--min-age")
                 .type(Long.class)
                 .setDefault(0L)
                 .help("Minimum age in seconds");
-        parser.addArgument("--max_age")
+        parser.addArgument("--max-age")
                 .type(Long.class)
                 .setDefault(Long.MAX_VALUE)
                 .help("Maximum age in seconds");
-        parser.addArgument("--min_size")
+        parser.addArgument("--min-size")
                 .type(Long.class)
                 .setDefault(0L)
                 .help("Minimum size in MBs");
-        parser.addArgument("--max_size")
+        parser.addArgument("--max-size")
                 .type(Long.class)
                 .setDefault(3000L)
                 .help("Maximum size in MBs");
-        parser.addArgument("--min_seeds")
+        parser.addArgument("--min-seeds")
                 .type(Long.class)
                 .setDefault(1L)
                 .help("Minimum seed count");
-        parser.addArgument("--max_seeds")
+        parser.addArgument("--max-seeds")
                 .type(Long.class)
                 .setDefault(Long.MAX_VALUE)
                 .help("Maximum seed count");
-        parser.addArgument("--min_peers")
+        parser.addArgument("--min-peers")
                 .type(Long.class)
                 .setDefault(0L)
                 .help("Minimum peer count");
-        parser.addArgument("--max_peers")
+        parser.addArgument("--max-peers")
                 .type(Long.class)
                 .setDefault(Long.MAX_VALUE)
                 .help("Maximum peer count");
@@ -92,24 +97,16 @@ public class AddSeriesTracker extends AbstractCommandHandler{
         long minPeers = ns.getLong("min_peers");
         long maxPeers = ns.getLong("max_peers");
 
-        try {
-            List<Torrent> torrents = TorrentSearch.getTorrents(terms, 5);
-            event.getChannel().sendMessage("Sample feed: ```\n" + torrents.stream().map(Torrent::toString)
-                    .collect(Collectors.joining("\n")) + "```").queue();
-        } catch (UnirestException e){
-            event.getChannel().sendMessage("Can't parse response").queue();
-        }
-
         if (episodes == null) {
             episodes = new ArrayList<>();
             episodes.add(null);  // so that for loop will run once
         }
 
-        for (Integer episode : episodes) {
-            storage.saveTracker(new SeriesTracker(
-                    event.getAuthor().getIdLong(),
-                    terms,
-                    episode == null ? "" : StringUtils.leftPad(episode.toString(), 2, "0"),
+        try {
+            String firstEp = episodes.get(0) == null ? "" :
+                    StringUtils.leftPad(episodes.get(0).toString(), 2, "0");
+            List<Torrent> torrents = TorrentSearch.getTorrentsWithFilters(
+                    (terms + " " + firstEp).strip(),
                     source,
                     minAge,
                     maxAge,
@@ -118,9 +115,33 @@ public class AddSeriesTracker extends AbstractCommandHandler{
                     minSeeds,
                     maxSeeds,
                     minPeers,
-                    maxPeers,
-                    System.currentTimeMillis()
-            ));
+                    maxPeers
+            );
+            event.getChannel().sendMessage("Sample feed: ```\n" + torrents.stream().map(Torrent::toString)
+                    .collect(Collectors.joining("\n")) + "```").queue();
+        } catch (UnirestException e){
+            event.getChannel().sendMessage("Can't parse response").queue();
+        }
+
+        if (!ns.getBoolean("dry_run")) {
+            event.getChannel().sendMessage("Adding " + episodes.size() + " trackers to database").queue();
+            for (Integer episode : episodes) {
+                storage.saveTracker(new SeriesTracker(
+                        event.getAuthor().getIdLong(),
+                        terms,
+                        episode == null ? "" : StringUtils.leftPad(episode.toString(), 2, "0"),
+                        source,
+                        minAge,
+                        maxAge,
+                        minSize,
+                        maxSize,
+                        minSeeds,
+                        maxSeeds,
+                        minPeers,
+                        maxPeers,
+                        System.currentTimeMillis()
+                ));
+            }
         }
     }
 

@@ -32,7 +32,7 @@ public class TorrentSearch {
             long minPeers,
             long maxPeers
     ) throws UnirestException {
-        List<Torrent> torrents = TorrentSearch.getTorrents(searchTerms, 25);
+        List<Torrent> torrents = TorrentSearch.getTorrents(searchTerms, 10);
         List<Torrent> filtered = new ArrayList<>();
         for (Torrent torrent : torrents) {
             if (source != null && !torrent.getSource().toLowerCase().equals(source.toLowerCase())) continue;

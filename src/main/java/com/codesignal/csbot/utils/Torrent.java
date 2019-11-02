@@ -55,8 +55,6 @@ public class Torrent {
         return name +
                 " magnetLink='" + StringUtils.abbreviate(magnetLink, 50) + '\'' +
                 " source='" + source + '\'' +
-                " createdAt=" + createdAt +
-                " sizeMBs=" + sizeMBs +
                 " seeds=" + seeds +
                 " peers=" + peers;
     }
