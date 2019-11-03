@@ -86,7 +86,7 @@ public class CodeCompileHandler implements SpecialCommandHandler {
         if (event.getUser().isBot() || !lruCache.contains(event.getMessageId())) {
             return;
         }
-        if (event.getReactionEmote().getEmoji().equals("▶")) {
+        if (event.getReactionEmote().isEmoji() && event.getReactionEmote().getEmoji().equals("▶")) {
             event.getChannel().retrieveMessageById(event.getMessageId()).queue(
                     (message) -> processRequestMessage(message, event.getUser().getName())
             );
