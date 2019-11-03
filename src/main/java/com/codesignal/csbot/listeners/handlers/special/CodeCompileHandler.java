@@ -86,9 +86,11 @@ public class CodeCompileHandler implements SpecialCommandHandler {
         if (event.getUser().isBot() || !lruCache.contains(event.getMessageId())) {
             return;
         }
-        event.getChannel().retrieveMessageById(event.getMessageId()).queue(
-                (message) -> processRequestMessage(message, event.getUser().getName())
-        );
+        if (event.getReactionEmote().getEmoji().equals("▶")) {
+            event.getChannel().retrieveMessageById(event.getMessageId()).queue(
+                    (message) -> processRequestMessage(message, event.getUser().getName())
+            );
+        }
     }
 
     private void processRequestMessage(Message message, final String requester) {
