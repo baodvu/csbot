@@ -23,10 +23,14 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.List;
+import java.util.Map;
 
 public class PlayCommandHandler extends AbstractCommandHandler {
     private static final String GOOGLE_API_KEY = System.getenv("GOOGLE_API_KEY");
-    private static final List<String> names = List.of("play", "skip");
+    private static final Map<String, String> RADIO_LINKS = Map.of(
+            "npr", "https://npr-ice.streamguys1.com/live.mp3"
+    );
+    private static final List<String> names = List.of("play", "skip", "stop");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Tell the bot to say something."; }
@@ -45,18 +49,36 @@ public class PlayCommandHandler extends AbstractCommandHandler {
     }
 
     public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand) throws ArgumentParserException {
-        if (botCommand.getCommandName().equals("skip")) {
-            scheduler.nextTrack();
-            return;
-        }
         Namespace ns = this.parseArgs(event);
         String song = String.join(" ", ns.getList("song"));
+        if (song.matches("^<.*://.*>$")) {
+            song = song.substring(1, song.length() - 1);
+        }
+        if (RADIO_LINKS.containsKey(song)) {
+            song = RADIO_LINKS.get(song);
+        }
         MessageChannel channel = event.getChannel();
 
         Guild guild = event.getGuild();
         AudioManager manager = guild.getAudioManager();
         manager.setSendingHandler(new DriveAudioSendHandler(player));
         VoiceChannel voiceChannel = guild.getVoiceChannelById(391833971488456704L);
+
+        if (botCommand.getCommandName().equals("stop")) {
+            scheduler.stopAllTracks();
+            manager.closeAudioConnection();
+            return;
+        }
+        if (botCommand.getCommandName().equals("skip")) {
+            if (!scheduler.nextTrack()) {
+                manager.closeAudioConnection();
+            }
+            return;
+        }
+
+        if (!manager.isConnected()) {
+            manager.openAudioConnection(voiceChannel);
+        }
 
         JSONObject file = null;
         final String trackUrl;
@@ -81,9 +103,6 @@ public class PlayCommandHandler extends AbstractCommandHandler {
         }
         final String songTitle = file == null ? null : file.getString("name");
 
-        if (!manager.isConnected()) {
-            manager.openAudioConnection(voiceChannel);
-        }
         playerManager.loadItemOrdered(guild.getId(), trackUrl, new AudioLoadResultHandler() {
             @Override
             public void trackLoaded(AudioTrack track) {
