@@ -30,7 +30,7 @@ public class PlayCommandHandler extends AbstractCommandHandler {
     private static final Map<String, String> RADIO_LINKS = Map.of(
             "npr", "https://npr-ice.streamguys1.com/live.mp3"
     );
-    private static final List<String> names = List.of("play", "skip", "stop");
+    private static final List<String> names = List.of("play", "skip", "stop", "pause", "seek");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Tell the bot to say something."; }
@@ -40,17 +40,13 @@ public class PlayCommandHandler extends AbstractCommandHandler {
     private final TrackScheduler scheduler;
 
     public PlayCommandHandler() {
-        ArgumentParser parser = this.buildArgParser();
-        parser.addArgument("song").nargs("*")
-                .help("URL or song name");
         player = playerManager.createPlayer();
         scheduler = new TrackScheduler(player);
         player.addListener(scheduler);
     }
 
-    public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand) throws ArgumentParserException {
-        Namespace ns = this.parseArgs(event);
-        String song = String.join(" ", ns.getList("song"));
+    public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand) {
+        String song = botCommand.getCommandParams();
         if (song.matches("^<.*://.*>$")) {
             song = song.substring(1, song.length() - 1);
         }
@@ -67,6 +63,39 @@ public class PlayCommandHandler extends AbstractCommandHandler {
         if (botCommand.getCommandName().equals("stop")) {
             scheduler.stopAllTracks();
             manager.closeAudioConnection();
+            return;
+        }
+        if (botCommand.getCommandName().equals("pause")) {
+            player.setPaused(!player.isPaused());
+            if (player.getPlayingTrack() != null) {
+                channel.sendMessage(String.format("Track is %s at %s",
+                        player.isPaused() ? "paused" : "resumed",
+                        formatDuration(player.getPlayingTrack().getPosition()))).queue();
+            }
+            return;
+        }
+        if (botCommand.getCommandName().equals("seek")) {
+            AudioTrack track = player.getPlayingTrack();
+            if (track == null) {
+                channel.sendMessage("No playing track found").queue();
+                return;
+            }
+            if (!track.isSeekable()) {
+                channel.sendMessage("Track is not seekable").queue();
+                return;
+            }
+            String query = botCommand.getCommandParams();
+            if (query.startsWith("-")) {
+                long delta = parseDuration(query.substring(1));
+                track.setPosition(Math.max(0, track.getPosition() - delta));
+            } else if (query.startsWith("+")) {
+                long delta = parseDuration(query.substring(1));
+                track.setPosition(track.getPosition() + delta);
+            } else {
+                long position = parseDuration(query);
+                track.setPosition(position);
+            }
+            channel.sendMessage("Track is at " + formatDuration(track.getPosition())).queue();
             return;
         }
         if (botCommand.getCommandName().equals("skip")) {
@@ -149,5 +178,24 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                 .asJson().getBody();
         JSONArray files = resp.getObject().getJSONArray("files");
         return files.isEmpty() ? null : files.getJSONObject(0);
+    }
+
+    private String formatDuration(long milliseconds) {
+        return String.format("%02d:%02d", milliseconds / 1000 / 60, milliseconds / 1000 % 60);
+    }
+
+    private long parseDuration(String rawString) {
+        long milliseconds = 0;
+        String[] parts = rawString.split(":");
+        if (parts.length > 0) {
+            milliseconds += Integer.parseInt(parts[parts.length - 1]) * 1000;
+        }
+        if (parts.length > 1) {
+            milliseconds += Integer.parseInt(parts[parts.length - 2]) * 60 * 1000;
+        }
+        if (parts.length > 2) {
+            milliseconds += Integer.parseInt(parts[parts.length - 3]) * 60 * 60 * 1000;
+        }
+        return milliseconds;
     }
 }
