@@ -29,7 +29,7 @@ public class PlayCommandHandler extends AbstractCommandHandler {
     private static final Map<String, String> RADIO_LINKS = Map.of(
             "npr", "https://npr-ice.streamguys1.com/live.mp3"
     );
-    private static final List<String> names = List.of("play", "skip", "stop", "pause", "seek", "playrandom");
+    private static final List<String> names = List.of("play", "skip", "stop", "pause", "repeat", "seek", "playrandom");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Tell the bot to say something."; }
@@ -59,48 +59,50 @@ public class PlayCommandHandler extends AbstractCommandHandler {
         manager.setSendingHandler(new DriveAudioSendHandler(player));
         VoiceChannel voiceChannel = guild.getVoiceChannelById(391833971488456704L);
 
-        if (botCommand.getCommandName().equals("stop")) {
-            scheduler.stopAllTracks();
-            manager.closeAudioConnection();
-            return;
-        }
-        if (botCommand.getCommandName().equals("pause")) {
-            player.setPaused(!player.isPaused());
-            if (player.getPlayingTrack() != null) {
-                channel.sendMessage(String.format("Track is %s at %s",
-                        player.isPaused() ? "paused" : "resumed",
-                        formatDuration(player.getPlayingTrack().getPosition()))).queue();
-            }
-            return;
-        }
-        if (botCommand.getCommandName().equals("seek")) {
-            AudioTrack track = player.getPlayingTrack();
-            if (track == null) {
-                channel.sendMessage("No playing track found").queue();
-                return;
-            }
-            if (!track.isSeekable()) {
-                channel.sendMessage("Track is not seekable").queue();
-                return;
-            }
-            if (query.startsWith("-")) {
-                long delta = parseDuration(query.substring(1));
-                track.setPosition(Math.max(0, track.getPosition() - delta));
-            } else if (query.startsWith("+")) {
-                long delta = parseDuration(query.substring(1));
-                track.setPosition(track.getPosition() + delta);
-            } else {
-                long position = parseDuration(query);
-                track.setPosition(position);
-            }
-            channel.sendMessage("Track is at " + formatDuration(track.getPosition())).queue();
-            return;
-        }
-        if (botCommand.getCommandName().equals("skip")) {
-            if (!scheduler.nextTrack()) {
+        switch (botCommand.getCommandName()) {
+            case "stop":
+                scheduler.stopAllTracks();
                 manager.closeAudioConnection();
-            }
-            return;
+                return;
+            case "pause":
+                player.setPaused(!player.isPaused());
+                if (player.getPlayingTrack() != null) {
+                    channel.sendMessage(String.format("Track is %s at %s",
+                            player.isPaused() ? "paused" : "resumed",
+                            formatDuration(player.getPlayingTrack().getPosition()))).queue();
+                }
+                return;
+            case "seek":
+                AudioTrack track = player.getPlayingTrack();
+                if (track == null) {
+                    channel.sendMessage("No playing track found").queue();
+                    return;
+                }
+                if (!track.isSeekable()) {
+                    channel.sendMessage("Track is not seekable").queue();
+                    return;
+                }
+                if (query.startsWith("-")) {
+                    long delta = parseDuration(query.substring(1));
+                    track.setPosition(Math.max(0, track.getPosition() - delta));
+                } else if (query.startsWith("+")) {
+                    long delta = parseDuration(query.substring(1));
+                    track.setPosition(track.getPosition() + delta);
+                } else {
+                    long position = parseDuration(query);
+                    track.setPosition(position);
+                }
+                channel.sendMessage("Track is at " + formatDuration(track.getPosition())).queue();
+                return;
+            case "skip":
+                if (!scheduler.nextTrack()) {
+                    manager.closeAudioConnection();
+                }
+                return;
+            case "repeat":
+                scheduler.setRepeating(!scheduler.isRepeating());
+                channel.sendMessage("Player was set to: " + (scheduler.isRepeating() ? "repeat" : "not repeat")).queue();
+                return;
         }
 
         if (!manager.isConnected()) {
