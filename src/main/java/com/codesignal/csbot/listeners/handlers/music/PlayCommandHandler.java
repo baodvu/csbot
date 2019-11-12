@@ -112,11 +112,6 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                 return;
         }
 
-        if (!manager.isConnected()) {
-            manager.openAudioConnection(voiceChannel);
-        }
-
-
         List<JSONObject> files = new ArrayList<>();
         final List<String> trackUrls = new ArrayList<>();
 
@@ -160,6 +155,9 @@ public class PlayCommandHandler extends AbstractCommandHandler {
             playerManager.loadItemOrdered(guild.getId(), trackUrl, new AudioLoadResultHandler() {
                 @Override
                 public void trackLoaded(AudioTrack track) {
+                    if (!manager.isConnected()) {
+                        manager.openAudioConnection(voiceChannel);
+                    }
                     String title = songTitle != null ? songTitle : track.getInfo().title;
                     channel.sendMessage("Adding to queue " + title).queue();
                     scheduler.queue(track, () -> {
