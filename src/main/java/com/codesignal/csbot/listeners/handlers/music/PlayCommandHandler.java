@@ -21,8 +21,10 @@ import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class PlayCommandHandler extends AbstractCommandHandler {
     private static final String GOOGLE_API_KEY = System.getenv("GOOGLE_API_KEY");
@@ -30,7 +32,7 @@ public class PlayCommandHandler extends AbstractCommandHandler {
             "npr", "https://npr-ice.streamguys1.com/live.mp3"
     );
     private static final List<String> names = List.of("play", "skip", "stop", "pause",
-            "resume", "repeat", "seek", "playrandom");
+            "resume", "repeat", "seek", "playrandom", "playlist");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Tell the bot to say something."; }
@@ -130,6 +132,16 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                     files.addAll(queryRandomSongs(
                             query.substring(splitIdx + 1),
                             Math.min(10, Math.max(0, Integer.parseInt(query.substring(0, splitIdx))))));
+                } else if (botCommand.getCommandName().equals("playlist")) {
+                    String[] parts = query.split(" ");
+                    List<String> fileIds = getPlaylist(parts[1]);
+                    Collections.shuffle(fileIds);
+                    for (String fileId: fileIds.subList(0, Math.min(Integer.parseInt(parts[0]), fileIds.size()))) {
+                        JSONObject obj = new JSONObject();
+                        obj.put("id", fileId);
+                        obj.put("name", getFileName(fileId));
+                        files.add(obj);
+                    }
                 } else {
                     files.addAll(querySong(query));
                 }
@@ -158,7 +170,7 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                     if (!manager.isConnected()) {
                         manager.openAudioConnection(voiceChannel);
                     }
-                    String title = songTitle != null ? songTitle : track.getInfo().title;
+                    String title = !StringUtils.isEmpty(songTitle) ? songTitle : track.getInfo().title;
                     channel.sendMessage("Adding to queue " + title).queue();
                     scheduler.queue(track, () -> {
                         channel.sendMessage("Playing " + title).queue();
@@ -244,5 +256,29 @@ public class PlayCommandHandler extends AbstractCommandHandler {
             milliseconds += Integer.parseInt(parts[parts.length - 3]) * 60 * 60 * 1000;
         }
         return milliseconds;
+    }
+
+    private List<String> getPlaylist(String playlistFileId) {
+        try {
+            String body = Unirest
+                    .get("https://www.googleapis.com/drive/v3/files/" + playlistFileId)
+                    .queryString("alt", "media")
+                    .queryString("key", GOOGLE_API_KEY)
+                    .asString().getBody();
+            return body.lines().collect(Collectors.toList());
+        } catch (UnirestException exp) {
+            return new ArrayList<>();
+        }
+    }
+
+    private String getFileName(String fileId) {
+        try {
+            return Unirest
+                    .get("https://www.googleapis.com/drive/v3/files/" + fileId)
+                    .queryString("key", GOOGLE_API_KEY)
+                    .asJson().getBody().getObject().getString("name");
+        } catch (UnirestException exp) {
+            return null;
+        }
     }
 }
