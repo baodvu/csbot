@@ -133,9 +133,11 @@ public class MessageListener extends ListenerAdapter {
                     if (!commandHandlerMap.containsKey(command)) {
                         String[] similarCommands = spellChecker.suggestSimilar(command, 1);
                         if (similarCommands.length > 0) {
+                            String oldCommand = command;
                             command = similarCommands[0];
                             event.getChannel().sendMessage(
-                                    String.format("*Did you mean to say `.%s`?*", command)
+                                    String.format("*Assuming `%s%s` is the British spelling of `%s%s`*",
+                                            COMMAND_PREFIX, oldCommand, COMMAND_PREFIX, command)
                             ).queue();
                         } else {
                             command = null;

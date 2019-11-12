@@ -29,7 +29,8 @@ public class PlayCommandHandler extends AbstractCommandHandler {
     private static final Map<String, String> RADIO_LINKS = Map.of(
             "npr", "https://npr-ice.streamguys1.com/live.mp3"
     );
-    private static final List<String> names = List.of("play", "skip", "stop", "pause", "repeat", "seek", "playrandom");
+    private static final List<String> names = List.of("play", "skip", "stop", "pause",
+            "resume", "repeat", "seek", "playrandom");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "Tell the bot to say something."; }
@@ -65,12 +66,18 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                 manager.closeAudioConnection();
                 return;
             case "pause":
-                player.setPaused(!player.isPaused());
-                if (player.getPlayingTrack() != null) {
-                    channel.sendMessage(String.format("Track is %s at %s",
-                            player.isPaused() ? "paused" : "resumed",
-                            formatDuration(player.getPlayingTrack().getPosition()))).queue();
+                if (!player.isPaused()) {
+                    player.setPaused(true);
                 }
+                channel.sendMessage(String.format("Track is paused at %s",
+                        formatDuration(player.getPlayingTrack().getPosition()))).queue();
+                return;
+            case "resume":
+                if (player.isPaused()) {
+                    player.setPaused(false);
+                }
+                channel.sendMessage(String.format("Track is resumed at %s",
+                            formatDuration(player.getPlayingTrack().getPosition()))).queue();
                 return;
             case "seek":
                 AudioTrack track = player.getPlayingTrack();
@@ -117,8 +124,10 @@ public class PlayCommandHandler extends AbstractCommandHandler {
             trackUrls.add(query);
         } else {
             try {
-                if (botCommand.getCommandName().equals("playrandom")) {
-                    int splitIdx = query.indexOf(" ");
+                int splitIdx = query.indexOf(" ");
+                if (botCommand.getCommandName().equals("playrandom")
+                        || botCommand.getCommandName().equals("play")
+                        && splitIdx >= 0 && query.substring(0, splitIdx).matches("[0-9]+")) {
                     if (splitIdx == -1) {
                         channel.sendMessage("Syntax: playrandom <number of songs> <folder search terms>").queue();
                         return;
@@ -127,7 +136,7 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                             query.substring(splitIdx + 1),
                             Math.min(10, Math.max(0, Integer.parseInt(query.substring(0, splitIdx))))));
                 } else {
-                    files.add(querySong(query));
+                    files.addAll(querySong(query));
                 }
             } catch (Exception e) {
                 event.getChannel().sendMessage("Error: " + e.getMessage()).queue();
@@ -183,7 +192,7 @@ public class PlayCommandHandler extends AbstractCommandHandler {
         }
     }
 
-    private JSONObject querySong(String title) throws UnirestException {
+    private List<JSONObject> querySong(String title) throws UnirestException {
         JsonNode resp = Unirest
                 .get(
                 "https://script.google.com/macros/s/AKfycbwR5eAczqX9ZxTX7Jd0iCRj38ZPXTO3Rf0eSD-mickeVmnyphc/exec")
@@ -194,7 +203,11 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                 .queryString("title", title)
                 .asJson().getBody();
         JSONArray files = resp.getObject().getJSONArray("files");
-        return files.isEmpty() ? null : files.getJSONObject(0);
+        List<JSONObject> available = new ArrayList<>();
+        for (int i = 0; i < Math.min(1, files.length()); ++i ) {
+            available.add(files.getJSONObject(i));
+        }
+        return available;
     }
 
     private List<JSONObject> queryRandomSongs(String folderTitle, int count) throws UnirestException {
