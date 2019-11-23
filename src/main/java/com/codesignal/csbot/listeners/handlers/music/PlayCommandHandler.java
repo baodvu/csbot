@@ -142,10 +142,14 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                     List<String> fileIds = getPlaylist(parts[1]);
                     Collections.shuffle(fileIds);
                     for (String fileId: fileIds.subList(0, Math.min(Integer.parseInt(parts[0]), fileIds.size()))) {
-                        JSONObject obj = new JSONObject();
-                        obj.put("id", fileId);
-                        obj.put("name", getFileName(fileId));
-                        files.add(obj);
+                        if (fileId.startsWith("http")) {
+                            trackUrls.add(fileId);
+                        } else {
+                            JSONObject obj = new JSONObject();
+                            obj.put("id", fileId);
+                            obj.put("name", getFileName(fileId));
+                            files.add(obj);
+                        }
                     }
                 } else {
                     files.addAll(querySong(query));
@@ -159,16 +163,19 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                         "https://www.googleapis.com/drive/v3/files/%s?alt=media&key=%s",
                         file.getString("id"), GOOGLE_API_KEY));
             }
-            if (files.isEmpty()) {
-                event.getChannel().sendMessage("No songs found").queue();
-                return;
-            }
+        }
+
+        if (trackUrls.isEmpty()) {
+            event.getChannel().sendMessage("No songs found").queue();
+            return;
         }
 
         int i = 0;
         final boolean _inSpoiler = inSpoiler;
         for (String trackUrl: trackUrls) {
-            final String songTitle = i < files.size() ? files.get(i++).getString("name") : null;
+            final String songTitle = i < files.size() && files.get(i).has("name")
+                    ? files.get(i).getString("name") : null;
+            i++;
 
             playerManager.loadItemOrdered(guild.getId(), trackUrl, new AudioLoadResultHandler() {
                 @Override
@@ -177,9 +184,11 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                         manager.openAudioConnection(voiceChannel);
                     }
                     String title = !StringUtils.isEmpty(songTitle) ? songTitle : track.getInfo().title;
-                    channel.sendMessageFormat("Adding to queue `%s`", _inSpoiler ? "||" + title + "||" : title).queue();
+                    channel.sendMessageFormat(
+                            _inSpoiler ? "Adding to queue ||`%s`||" : "Adding to queue `%s`", title).queue();
                     scheduler.queue(track, () -> {
-                        channel.sendMessageFormat("Playing `%s`", _inSpoiler ? "||" + title + "||" : title).queue();
+                        channel.sendMessageFormat(
+                                _inSpoiler ? "Playing ||`%s`||" : "Playing `%s`", title).queue();
                         return null;
                     });
                 }
