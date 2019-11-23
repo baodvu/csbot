@@ -177,19 +177,19 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                         manager.openAudioConnection(voiceChannel);
                     }
                     String title = !StringUtils.isEmpty(songTitle) ? songTitle : track.getInfo().title;
-                    channel.sendMessage("Adding to queue " + (_inSpoiler ? "||" + title + "||" : title)).queue();
+                    channel.sendMessageFormat("Adding to queue `%s`", _inSpoiler ? "||" + title + "||" : title).queue();
                     scheduler.queue(track, () -> {
-                        channel.sendMessage("Playing " + (_inSpoiler ? "||" + title + "||" : title)).queue();
+                        channel.sendMessageFormat("Playing `%s`", _inSpoiler ? "||" + title + "||" : title).queue();
                         return null;
                     });
                 }
 
                 @Override
                 public void playlistLoaded(AudioPlaylist playlist) {
-                    channel.sendMessage("Found " + playlist.getTracks().size() + " tracks").queue();
+                    channel.sendMessageFormat("Found %s tracks", playlist.getTracks().size()).queue();
                     for (AudioTrack track : playlist.getTracks()) {
                         scheduler.queue(track, () -> {
-                            channel.sendMessage("Playing " + track.getInfo().title).queue();
+                            channel.sendMessageFormat("Playing `%s`", track.getInfo().title).queue();
                             return null;
                         });
                     }
@@ -197,12 +197,12 @@ public class PlayCommandHandler extends AbstractCommandHandler {
 
                 @Override
                 public void noMatches() {
-                    channel.sendMessage("Nothing found by " + trackUrl).queue();
+                    channel.sendMessageFormat("Nothing found by `%s`", trackUrl).queue();
                 }
 
                 @Override
                 public void loadFailed(FriendlyException exception) {
-                    channel.sendMessage("Could not play: " + exception.getMessage()).queue();
+                    channel.sendMessageFormat("Could not play: `%s`", exception.getMessage()).queue();
                 }
             });
         }
