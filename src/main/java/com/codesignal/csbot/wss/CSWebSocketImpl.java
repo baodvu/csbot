@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -55,12 +56,16 @@ public class CSWebSocketImpl implements CSWebSocket {
                 this.resetConnection();
             } catch (Exception exception) {
                 exception.printStackTrace();
+                log.error("Unable to reset connection: {}", exception.getMessage());
                 return;
             }
         }
 
         try {
-            isBooting.await();
+            if (!isBooting.await(15, TimeUnit.SECONDS)) {
+                log.error("Time waiting for a connected signal from wss elapsed past 15 seconds.");
+                return;
+            }
         } catch (InterruptedException exception) {
             log.error("Thread is interrupted. Return prematurely.");
             return;

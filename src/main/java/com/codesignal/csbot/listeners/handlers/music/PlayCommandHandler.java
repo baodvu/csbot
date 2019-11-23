@@ -116,6 +116,7 @@ public class PlayCommandHandler extends AbstractCommandHandler {
 
         List<JSONObject> files = new ArrayList<>();
         final List<String> trackUrls = new ArrayList<>();
+        boolean inSpoiler = false;
 
         if (query.startsWith("http")) {
             trackUrls.add(query);
@@ -133,6 +134,10 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                             query.substring(splitIdx + 1),
                             Math.min(10, Math.max(0, Integer.parseInt(query.substring(0, splitIdx))))));
                 } else if (botCommand.getCommandName().equals("playlist")) {
+                    if (query.contains("-h")) {
+                        inSpoiler = true;
+                        query = query.replaceAll("-h", "").strip();
+                    }
                     String[] parts = query.split(" ");
                     List<String> fileIds = getPlaylist(parts[1]);
                     Collections.shuffle(fileIds);
@@ -161,6 +166,7 @@ public class PlayCommandHandler extends AbstractCommandHandler {
         }
 
         int i = 0;
+        final boolean _inSpoiler = inSpoiler;
         for (String trackUrl: trackUrls) {
             final String songTitle = i < files.size() ? files.get(i++).getString("name") : null;
 
@@ -171,9 +177,9 @@ public class PlayCommandHandler extends AbstractCommandHandler {
                         manager.openAudioConnection(voiceChannel);
                     }
                     String title = !StringUtils.isEmpty(songTitle) ? songTitle : track.getInfo().title;
-                    channel.sendMessage("Adding to queue " + title).queue();
+                    channel.sendMessage("Adding to queue " + (_inSpoiler ? "||" + title + "||" : title)).queue();
                     scheduler.queue(track, () -> {
-                        channel.sendMessage("Playing " + title).queue();
+                        channel.sendMessage("Playing " + (_inSpoiler ? "||" + title + "||" : title)).queue();
                         return null;
                     });
                 }
@@ -260,11 +266,18 @@ public class PlayCommandHandler extends AbstractCommandHandler {
 
     private List<String> getPlaylist(String playlistFileId) {
         try {
-            String body = Unirest
-                    .get("https://www.googleapis.com/drive/v3/files/" + playlistFileId)
-                    .queryString("alt", "media")
-                    .queryString("key", GOOGLE_API_KEY)
-                    .asString().getBody();
+            String body;
+            if (playlistFileId.startsWith("http")) {
+                body = Unirest
+                        .get(playlistFileId)
+                        .asString().getBody();
+            } else {
+                body = Unirest
+                        .get("https://www.googleapis.com/drive/v3/files/" + playlistFileId)
+                        .queryString("alt", "media")
+                        .queryString("key", GOOGLE_API_KEY)
+                        .asString().getBody();
+            }
             return body.lines().collect(Collectors.toList());
         } catch (UnirestException exp) {
             return new ArrayList<>();
