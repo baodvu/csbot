@@ -39,7 +39,7 @@ class ChallengeWatcher {
     private final CodesignalClient csClient = CodesignalClientSingleton.getInstance();
 
     // If the challenge is too old we shouldn't dig it up.
-    private final int MAX_LOOKBACK_TIME_IN_MS = 1000 * 60 * 60;  // 1 hour
+    private final int MAX_LOOKBACK_TIME_IN_SECONDS = 60 * 60;  // 1 hour
 
     // Setting
     private final String tab;
@@ -70,7 +70,7 @@ class ChallengeWatcher {
             long elapsedSeconds = (Instant.now().toEpochMilli() - feed.get(0).get("date").asLong()) / 1000;
 
             // If more than an hour ago, skip
-            if (elapsedSeconds > MAX_LOOKBACK_TIME_IN_MS) {
+            if (elapsedSeconds > MAX_LOOKBACK_TIME_IN_SECONDS) {
                 return;
             }
             String challengeId = challenge.get("_id").textValue();
