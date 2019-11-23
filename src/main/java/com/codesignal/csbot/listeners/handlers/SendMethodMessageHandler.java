@@ -52,7 +52,7 @@ public class SendMethodMessageHandler extends AbstractCommandHandler{
             csClient.send(
                 new MethodMessage(
                         method,
-                        new ObjectMapper().readValue(params, new TypeReference<List<JsonNode>>() {})
+                        new ObjectMapper().readValue(params, new TypeReference<>() {})
                 ),
                 (ResultMessage resultMessage) -> {
                     EmbedBuilder eb = new EmbedBuilder();
