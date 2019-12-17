@@ -10,14 +10,13 @@ import com.neovisionaries.ws.client.WebSocket;
 import com.neovisionaries.ws.client.WebSocketAdapter;
 import com.neovisionaries.ws.client.WebSocketFactory;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -43,6 +42,8 @@ public class CSWebSocketImpl implements CSWebSocket {
     private WebSocket ws;
 
     private WebSocketFactory factory = new WebSocketFactory();
+
+    private ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
 
     public CSWebSocketImpl build() throws Exception {
         factory.setConnectionTimeout(TIMEOUT_IN_MS);
@@ -125,10 +126,12 @@ public class CSWebSocketImpl implements CSWebSocket {
 
             @Override
             public void onTextMessage(WebSocket websocket, String message) {
-                log.info("[WS-received] {}...", message.substring(0, Math.min(message.length(), LINE_LIMIT)));
+                log.info(StringUtils.abbreviate("[WS-received] " + message, LINE_LIMIT));
                 if (message.equals("a[\"{\\\"msg\\\":\\\"ping\\\"}\"]")) {
                     millisecondsSinceEpoch = System.currentTimeMillis();
                     ws.sendText("[\"{\\\"msg\\\":\\\"pong\\\"}\"]");
+                } else if (message.equals("a[\"{\\\"msg\\\":\\\"pong\\\"}\"]")) {
+                    millisecondsSinceEpoch = System.currentTimeMillis();
                 } else if (message.startsWith("a[\"{\\\"msg\\\":\\\"connected\\\"")) {
                     millisecondsSinceEpoch = System.currentTimeMillis();
                     sendWithoutChecking(new GetServerTimeMessage());
@@ -139,6 +142,11 @@ public class CSWebSocketImpl implements CSWebSocket {
                             "sha-256"
                     ));
                     isBooting.countDown();
+                    service.scheduleWithFixedDelay(
+                            () -> {
+                                log.info("[WS-sending] ping");
+                                ws.sendText("[\"{\\\"msg\\\":\\\"ping\\\"}\"]");
+                            }, 30, 45, TimeUnit.SECONDS);
                 } else if (message.startsWith("a[\"{\\\"msg\\\":\\\"result\\\"")) {
                     try {
                         ObjectMapper objectMapper = new ObjectMapper();
