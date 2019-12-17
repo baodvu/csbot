@@ -42,8 +42,10 @@ public class CSWebSocketImpl implements CSWebSocket {
 
     private WebSocket ws;
 
+    private WebSocketFactory factory = new WebSocketFactory();
 
     public CSWebSocketImpl build() throws Exception {
+        factory.setConnectionTimeout(TIMEOUT_IN_MS);
         resetConnection();
         return this;
     }
@@ -108,7 +110,6 @@ public class CSWebSocketImpl implements CSWebSocket {
         if (ws != null && ws.isOpen()) close();
         log.info("Resetting connection to Codesignal");
 
-        WebSocketFactory factory = new WebSocketFactory();
         String randomString = Randomizer.getAlphaNumericString(8);
 
         ws = factory.createSocket(
@@ -157,9 +158,12 @@ public class CSWebSocketImpl implements CSWebSocket {
 
         // Connect to the server and perform an opening handshake.
         // This method blocks until the opening handshake is finished.
+        log.info("Connect to the server and do a handshake");
         ws.connect();
+        log.info("Send <connect> message");
         ws.sendText("[\"{\\\"msg\\\":\\\"connect\\\",\\\"version\\\":\\\"1\\\"," +
                 "\\\"support\\\":[\\\"1\\\",\\\"pre2\\\",\\\"pre1\\\"]}\"]");
+        log.info("<connect> sent");
     }
 
     public void close() {
