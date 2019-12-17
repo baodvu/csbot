@@ -128,17 +128,19 @@ public class MessageListener extends ListenerAdapter {
 
             if (tokens.countTokens() > 0) {
                 String command = tokens.nextToken();
+                String oldCommand = command;
                 String params = coreMessage.substring(command.length()).strip();
                 try {
                     if (!commandHandlerMap.containsKey(command)) {
                         String[] similarCommands = spellChecker.suggestSimilar(command, 1);
                         if (similarCommands.length > 0) {
-                            String oldCommand = command;
                             command = similarCommands[0];
-                            event.getChannel().sendMessage(
-                                    String.format("*Assuming `%s%s` is the British spelling of `%s%s`*",
-                                            COMMAND_PREFIX, oldCommand, COMMAND_PREFIX, command)
-                            ).queue();
+                            if (!command.contains("?")) {
+                                event.getChannel().sendMessage(
+                                        String.format("*Assuming `%s%s` is the British spelling of `%s%s`*",
+                                                COMMAND_PREFIX, oldCommand, COMMAND_PREFIX, command)
+                                ).queue();
+                            }
                         } else {
                             command = null;
                         }
@@ -146,7 +148,10 @@ public class MessageListener extends ListenerAdapter {
                     if (command != null) {
                         try {
                             commandHandlerMap.get(command).onMessageReceived(
-                                    event, new BotCommand().withCommandName(command).withCommandParams(params));
+                                    event, new BotCommand()
+                                            .withRawCommandName(oldCommand)
+                                            .withCommandName(command)
+                                            .withCommandParams(params));
                             return;
                         } catch (ArgumentParserException exp) {
                             // Since we already printed out the error to discord, do nothing here.

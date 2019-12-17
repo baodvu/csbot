@@ -7,7 +7,7 @@ import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import java.util.List;
 
 public class PingCommandHandler extends AbstractCommandHandler {
-    private static final List<String> names = List.of("ping", "ding");
+    private static final List<String> names = List.of("?ing");
 
     public List<String> getNames() { return names; }
     public String getShortDescription() { return "A simple handler example"; }
@@ -19,6 +19,9 @@ public class PingCommandHandler extends AbstractCommandHandler {
     public void onMessageReceived(MessageReceivedEvent event, BotCommand botCommand) throws ArgumentParserException {
         this.parseArgs(event);
 
-        event.getChannel().sendMessage(botCommand.getCommandName().charAt(0) + "ong").queue();
+        if (botCommand.getRawCommandName().endsWith("ing")) {
+            event.getChannel().sendMessage(
+                    botCommand.getRawCommandName().replace("ing", "ong")).queue();
+        }
     }
 }
