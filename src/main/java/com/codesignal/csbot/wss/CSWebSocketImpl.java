@@ -175,6 +175,7 @@ public class CSWebSocketImpl implements CSWebSocket {
     }
 
     public void close() {
+        service.shutdown();
         ws.sendClose();
     }
 }
