@@ -166,7 +166,7 @@ class ChallengeWatcher {
             eb.addField(
                     "Reward",
                     challenge.get("reward") != null
-                            ? challenge.get("reward").asText()
+                            ? String.format("%d", challenge.get("reward").intValue())
                             : "N/A",
                     true);
             eb.addField(

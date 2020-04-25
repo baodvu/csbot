@@ -47,7 +47,7 @@ public class GetCSDailyHandler extends AbstractCommandHandler {
             eb.addField("Visibility", String.format("%s", challenge.get("visibility").textValue()), true);
             eb.addField("Type", String.format("%s", challenge.get("type").textValue()), true);
             eb.addField("General Type", String.format("%s", challenge.get("generalType").textValue()), true);
-            eb.addField("Reward", String.format("%s", challenge.get("reward").textValue()), true);
+            eb.addField("Reward", String.format("%d", challenge.get("reward").intValue()), true);
             eb.addField("Duration", String.format("%d", duration), true);
             eb.setColor(new Color(0xF4EB41));
             event.getChannel().sendMessage(eb.build()).queue();
