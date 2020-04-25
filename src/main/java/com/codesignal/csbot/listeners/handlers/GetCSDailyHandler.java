@@ -36,6 +36,7 @@ public class GetCSDailyHandler extends AbstractCommandHandler {
         Message message = new GetDashboard("public", 1);
         csClient.send(message, (ResultMessage resultMessage) -> {
             JsonNode challenge = resultMessage.getResult().at("/challenges/0/challengeDoc");
+            int duration = (challenge.get("expireDate").intValue() - challenge.get("startDate").intValue());
             EmbedBuilder eb = new EmbedBuilder();
             eb.setTitle("Latest official challenge", null);
             eb.addField("Name", String.format("%s", challenge.get("name").textValue()), true);
@@ -47,8 +48,7 @@ public class GetCSDailyHandler extends AbstractCommandHandler {
             eb.addField("Type", String.format("%s", challenge.get("type").textValue()), true);
             eb.addField("General Type", String.format("%s", challenge.get("generalType").textValue()), true);
             eb.addField("Reward", String.format("%s", challenge.get("reward").textValue()), true);
-            eb.addField("First Solution", String.format("%s", challenge.get("firstSolution").textValue()), true);
-            eb.addField("Solution Count", String.format("%s", challenge.get("solutionCount").intValue()), true);
+            eb.addField("Duration", String.format("%d", duration), true);
             eb.setColor(new Color(0xF4EB41));
             event.getChannel().sendMessage(eb.build()).queue();
         });
