@@ -2,9 +2,9 @@ package com.codesignal.csbot.watchers;
 
 import com.codesignal.csbot.adapters.codesignal.CodesignalClient;
 import com.codesignal.csbot.adapters.codesignal.CodesignalClientSingleton;
-import com.codesignal.csbot.adapters.codesignal.message.GetUserFeedMessage;
 import com.codesignal.csbot.adapters.codesignal.message.Message;
 import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
+import com.codesignal.csbot.adapters.codesignal.message.challenges.GetDashboard;
 import com.codesignal.csbot.adapters.codesignal.message.challengeservice.GetDetailsMessage;
 import com.codesignal.csbot.adapters.codesignal.message.userservice.GetMultipleWithVisibleFieldsMessage;
 import com.codesignal.csbot.models.Notification;
@@ -42,12 +42,12 @@ class ChallengeWatcher {
     private final int MAX_LOOKBACK_TIME_IN_SECONDS = 60 * 60;  // 1 hour
 
     // Setting
-    private final String tab;
+    private final String visibility;
     private final Color color;
     private final String notificationTag;
 
-    ChallengeWatcher(String tab, Color color, String notificationTag) {
-        this.tab = tab;
+    ChallengeWatcher(String visibility, Color color, String notificationTag) {
+        this.visibility = visibility;
         this.color = color;
         this.notificationTag = notificationTag;
     }
@@ -61,13 +61,12 @@ class ChallengeWatcher {
             return;
         }
 
-        Message message = new GetUserFeedMessage(tab, 0, 1);
+        Message message = new GetDashboard(visibility, 1);
         csClient.send(message, (ResultMessage resultMessage) -> {
-            JsonNode feed = resultMessage.getResult().get("feed");
-            JsonNode challenge = feed.get(0).get("challenge");
+            JsonNode challenge = resultMessage.getResult().at("/challenges/0/challengeDoc");
 
             // Check with db to see if this notification has already been sent out.
-            long elapsedSeconds = (Instant.now().toEpochMilli() - feed.get(0).get("date").asLong()) / 1000;
+            long elapsedSeconds = (Instant.now().toEpochMilli() - challenge.get("date").asLong()) / 1000;
 
             // If more than an hour ago, skip
             if (elapsedSeconds > MAX_LOOKBACK_TIME_IN_SECONDS) {

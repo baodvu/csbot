@@ -32,7 +32,7 @@ public class MainWatcher {
         boolean isProd = "prod".equals(System.getenv("ENV"));
 
         ChallengeWatcher officialChallengeWatcher = new ChallengeWatcher(
-                "all", new Color(0xfebe1e), isProd ? "<@&493536203447074826>" : "<tag_removed>");
+                "public", new Color(0xfebe1e), isProd ? "<@&493536203447074826>" : "<tag_removed>");
         service.scheduleAtFixedRate(
                 () -> officialChallengeWatcher.run(discordClient),
                 0,

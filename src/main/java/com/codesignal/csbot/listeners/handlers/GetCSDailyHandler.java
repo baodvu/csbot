@@ -2,9 +2,9 @@ package com.codesignal.csbot.listeners.handlers;
 
 import com.codesignal.csbot.adapters.codesignal.CodesignalClient;
 import com.codesignal.csbot.adapters.codesignal.CodesignalClientSingleton;
-import com.codesignal.csbot.adapters.codesignal.message.GetUserFeedMessage;
 import com.codesignal.csbot.adapters.codesignal.message.Message;
 import com.codesignal.csbot.adapters.codesignal.message.ResultMessage;
+import com.codesignal.csbot.adapters.codesignal.message.challenges.GetDashboard;
 import com.codesignal.csbot.listeners.BotCommand;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -33,9 +33,9 @@ public class GetCSDailyHandler extends AbstractCommandHandler {
         this.parseArgs(event);
         CodesignalClient csClient = CodesignalClientSingleton.getInstance();
 
-        Message message = new GetUserFeedMessage("all", 0, 1);
+        Message message = new GetDashboard("public", 1);
         csClient.send(message, (ResultMessage resultMessage) -> {
-            JsonNode challenge = resultMessage.getResult().at("/feed/0/challenge");
+            JsonNode challenge = resultMessage.getResult().at("/challenges/0/challengeDoc");
             EmbedBuilder eb = new EmbedBuilder();
             eb.setTitle("Latest official challenge", null);
             eb.addField("Name", String.format("%s", challenge.get("name").textValue()), true);

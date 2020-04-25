@@ -7,7 +7,7 @@ public class GetUserFeedMessage extends MethodMessage {
     public GetUserFeedMessage(String tab, int offset, int limit) {
         super("getUserFeed", List.of(Map.ofEntries(
                 Map.entry("type", "challenges"),
-                Map.entry("tab", tab),
+                Map.entry("tab", tab),  // "all" or "community"
                 Map.entry("difficulty", "all"),
                 Map.entry("generalType", "all"),
                 Map.entry("offset", offset),

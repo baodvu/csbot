@@ -31,6 +31,8 @@ import java.util.stream.Collectors;
 
 public class MessageListener extends ListenerAdapter {
     private static final String COMMAND_PREFIX = System.getenv("COMMAND_PREFIX");
+    private static final TriviaCommandHandler triviaCommandHandler = new TriviaCommandHandler();
+    private static final CodeCompileHandler codeCompileHandler = new CodeCompileHandler();
     private static final List<CommandHandler> COMMAND_HANDLERS = List.of(
             new AddSeriesTracker(),
             new GetCSDailyHandler(),
@@ -44,9 +46,9 @@ public class MessageListener extends ListenerAdapter {
             new SendMethodMessageHandler(),
             new UndeleteCommandHandler(),
             new WolframAlphaHandler(),
-            new YoutubeDownloadHandler()
+            new YoutubeDownloadHandler(),
+            triviaCommandHandler
     );
-    private static final CodeCompileHandler codeCompileHandler = new CodeCompileHandler();
     private static final Logger logger = LoggerFactory.getLogger(MessageListener.class);
     private final Storage storage = new Storage();
     private SpellChecker spellChecker;
@@ -164,6 +166,7 @@ public class MessageListener extends ListenerAdapter {
         }
 
         codeCompileHandler.onMessageReceived(event);
+        triviaCommandHandler.checkAnswer(event);
     }
 
     @Override
