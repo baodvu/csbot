@@ -24,11 +24,10 @@ class CSBot {
 
         // Init discord client
         String DISCORD_BOT_TOKEN = System.getenv("DISCORD_TOKEN");
-        JDA discordClient = new JDABuilder(AccountType.BOT)
-                .setToken(DISCORD_BOT_TOKEN)
+        JDA discordClient = JDABuilder.createDefault(DISCORD_BOT_TOKEN)
                 .setActivity(Activity.playing("codesignal"))
-                .addEventListeners(new MessageListener())
-                .build().awaitReady();
+                .build();
+        discordClient.addEventListener(new MessageListener());
 
         // Watchers to pull latest changes to a website / page
         MainWatcher.init(discordClient);
